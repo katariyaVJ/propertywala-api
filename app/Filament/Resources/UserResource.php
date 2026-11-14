@@ -70,10 +70,15 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('phone')->label('Mobile')->searchable(),
-                Tables\Columns\TextColumn::make('alt_phone')->label('Alt Mobile')->searchable()->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn (User $record): ?string => $record->email),
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Mobile')
+                    ->searchable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -82,10 +87,21 @@ class UserResource extends Resource
                         'banker' => 'info',
                         default => 'success',
                     }),
-                Tables\Columns\TextColumn::make('city')->sortable(),
-                Tables\Columns\IconColumn::make('is_phone_verified')->boolean(),
-                Tables\Columns\IconColumn::make('is_blocked')->boolean()->color('danger'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime('d M Y')->sortable(),
+                Tables\Columns\TextColumn::make('city')
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_phone_verified')
+                    ->label('Verified')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_blocked')
+                    ->label('Blocked')
+                    ->boolean()
+                    ->color('danger'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Joined')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('role')->options([
@@ -100,24 +116,26 @@ class UserResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_blocked')->label('Blocked Users'),
             ])
             ->actions([
-                Tables\Actions\Action::make('block')
-                    ->label('Block')
-                    ->icon('heroicon-o-no-symbol')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (User $record) {
-                        $record->update(['is_blocked' => true, 'block_reason' => 'Blocked by Admin']);
-                    })
-                    ->visible(fn (User $record) => !$record->is_blocked && $record->role !== 'admin'),
-                Tables\Actions\Action::make('unblock')
-                    ->label('Unblock')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->action(function (User $record) {
-                        $record->update(['is_blocked' => false, 'block_reason' => null]);
-                    })
-                    ->visible(fn (User $record) => (bool) $record->is_blocked),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('block')
+                        ->label('Block User')
+                        ->icon('heroicon-o-no-symbol')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (User $record) {
+                            $record->update(['is_blocked' => true, 'block_reason' => 'Blocked by Admin']);
+                        })
+                        ->visible(fn (User $record) => !$record->is_blocked && $record->role !== 'admin'),
+                    Tables\Actions\Action::make('unblock')
+                        ->label('Unblock User')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(function (User $record) {
+                            $record->update(['is_blocked' => false, 'block_reason' => null]);
+                        })
+                        ->visible(fn (User $record) => (bool) $record->is_blocked),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ]);
     }
 

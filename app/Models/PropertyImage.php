@@ -25,5 +25,16 @@ class PropertyImage extends Model
     {
         return $this->belongsTo(Property::class);
     }
+
+    public function getImageUrlAttribute($value): string
+    {
+        if (empty($value)) {
+            return '';
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+        return asset('storage/' . ltrim($value, '/'));
+    }
 }
 

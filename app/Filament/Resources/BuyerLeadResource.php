@@ -45,17 +45,19 @@ class BuyerLeadResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('property.title')
-                    ->label('Property')
-                    ->limit(35)
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('buyer_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('buyer_phone')
+                    ->label('Buyer / Lead')
+                    ->description(fn (BuyerLead $r): string => $r->buyer_phone)
+                    ->searchable(['buyer_name', 'buyer_phone'])
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('property.title')
+                    ->label('Property Inquired')
+                    ->description(fn (BuyerLead $r): string => 'Code: #' . ($r->property->property_code ?? 'N/A'))
+                    ->wrap()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('intent')
-                    ->badge(),
-                Tables\Columns\TextColumn::make('timeline'),
+                    ->badge()
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -65,8 +67,11 @@ class BuyerLeadResource extends Resource
                         'Spam' => 'danger',
                         default => 'secondary',
                     }),
+                Tables\Columns\TextColumn::make('timeline')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('d M Y, h:i A')
+                    ->label('Received')
+                    ->dateTime('d M Y')
                     ->sortable(),
             ])
             ->filters([
@@ -79,7 +84,10 @@ class BuyerLeadResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ]);
     }
 

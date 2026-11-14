@@ -4,8 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PropertyResource\Pages;
 use App\Models\Property;
+use App\Models\City;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -21,141 +23,405 @@ class PropertyResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $recordTitleAttribute = 'title';
+
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Tabs::make('PropertyDetails')->tabs([
-                // Tab 1: General & Unique Code
-                Forms\Components\Tabs\Tab::make('General & Unique Code')->schema([
-                    Forms\Components\TextInput::make('property_code')
-                        ->label('Property Code (e.g. 032)')
-                        ->unique(ignoreRecord: true)
-                        ->placeholder('032')
-                        ->maxLength(30)
-                        ->helperText('Assign a unique short code for fast user lookup.'),
-                    Forms\Components\Select::make('user_id')
-                        ->relationship('user', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required(),
-                    Forms\Components\TextInput::make('title')
-                        ->required()
-                        ->maxLength(220)
-                        ->columnSpanFull(),
-                    Forms\Components\Select::make('intent')
-                        ->options([
-                            'Sell' => 'Sell',
-                            'Rent' => 'Rent',
-                            'Bank Auction' => 'Bank Auction',
-                        ])
-                        ->required(),
-                    Forms\Components\Select::make('asset_type')
-                        ->options([
-                            'Property' => 'Property (Real Estate)',
-                            'Vehicle' => 'Vehicle (Bank Seized)',
-                        ])
-                        ->required()
-                        ->reactive(),
-                    Forms\Components\TextInput::make('property_sub_type')
-                        ->label('Sub-Type')
-                        ->placeholder('Apartment / Flat, Commercial Shop, Tipper Truck, SUV')
-                        ->required()
-                        ->maxLength(80),
-                    Forms\Components\Select::make('status')
-                        ->options([
-                            'Active' => 'Active (Published)',
-                            'Under Review' => 'Under Review',
-                            'Sold / Rented' => 'Sold / Rented',
-                            'Rejected' => 'Rejected',
-                        ])
-                        ->default('Under Review')
-                        ->required(),
-                    Forms\Components\Toggle::make('is_verified')->label('Verified Listing')->default(false),
-                    Forms\Components\Toggle::make('is_featured')->label('Featured on Feed')->default(false),
-                    Forms\Components\Textarea::make('description')->columnSpanFull(),
-                ])->columns(2),
+            Forms\Components\Wizard::make([
+                // STEP 1: Basic Information
+                Forms\Components\Wizard\Step::make('Basic Details')
+                    ->icon('heroicon-o-information-circle')
+                    ->description('Property type, code & title')
+                    ->schema([
+                        Forms\Components\Grid::make(3)->schema([
+                            Forms\Components\TextInput::make('property_code')
+                                ->label('Property Code (e.g. 032)')
+                                ->unique(ignoreRecord: true)
+                                ->placeholder('032')
+                                ->maxLength(30)
+                                ->helperText('Unique short code for instant search in app.')
+                                ->required(),
+                            Forms\Components\Select::make('user_id')
+                                ->label('Assigned User / Owner')
+                                ->relationship('user', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->default(fn () => auth()->id())
+                                ->required(),
+                            Forms\Components\Select::make('posted_by_role')
+                                ->label('Posted By')
+                                ->options([
+                                    'Owner' => 'Owner',
+                                    'Agent' => 'Agent / Broker',
+                                    'Builder' => 'Builder / Developer',
+                                    'Banker' => 'Bank / Financial Inst.',
+                                ])
+                                ->default('Owner')
+                                ->required(),
+                        ]),
 
-                // Tab 2: Pricing & Location
-                Forms\Components\Tabs\Tab::make('Pricing & Location')->schema([
-                    Forms\Components\TextInput::make('price')
-                        ->numeric()
-                        ->prefix('₹')
-                        ->required(),
-                    Forms\Components\TextInput::make('price_display')
-                        ->label('Display Price (e.g. ₹ 1.25 Cr)')
-                        ->required(),
-                    Forms\Components\TextInput::make('price_per_sqft')
-                        ->label('Price Per Sq.Ft'),
-                    Forms\Components\Toggle::make('is_negotiable')->default(true),
-                    Forms\Components\TextInput::make('society_or_yard')
-                        ->label('Society / Complex / Yard Name'),
-                    Forms\Components\TextInput::make('locality')
-                        ->required(),
-                    Forms\Components\TextInput::make('city')
-                        ->default('Surat')
-                        ->required(),
-                    Forms\Components\TextInput::make('state')
-                        ->default('Gujarat'),
-                    Forms\Components\TextInput::make('pincode'),
-                    Forms\Components\TextInput::make('contact_phone')
-                        ->label('Seller / Officer Contact Phone')
-                        ->required(),
-                ])->columns(2),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Select::make('asset_type')
+                                ->label('Asset Type')
+                                ->options([
+                                    'Property' => 'Property (Real Estate)',
+                                    'Vehicle' => 'Vehicle (Bank Seized)',
+                                ])
+                                ->default('Property')
+                                ->live()
+                                ->required(),
+                            Forms\Components\Select::make('intent')
+                                ->label('Intent / Purpose')
+                                ->options([
+                                    'Sell' => 'For Sale',
+                                    'Rent' => 'For Rent',
+                                    'Bank Auction' => 'Bank Auction (SARFAESI)',
+                                ])
+                                ->default('Sell')
+                                ->live()
+                                ->required(),
+                        ]),
 
-                // Tab 3: Real Estate Specifications
-                Forms\Components\Tabs\Tab::make('Real Estate Specs')->schema([
-                    Forms\Components\TextInput::make('bhk')->placeholder('2 BHK, 3 BHK, Penthouse'),
-                    Forms\Components\TextInput::make('bathrooms')->placeholder('2 Bathrooms'),
-                    Forms\Components\TextInput::make('balconies')->placeholder('1 Balcony'),
-                    Forms\Components\TextInput::make('area_value')->numeric(),
-                    Forms\Components\TextInput::make('area_unit')->default('Sq.Ft'),
-                    Forms\Components\TextInput::make('area_type')->default('Super Built-up Area'),
-                    Forms\Components\TextInput::make('furnishing')->placeholder('Fully Furnished, Unfurnished'),
-                    Forms\Components\TagsInput::make('amenities')
-                        ->placeholder('Add amenity (Gym, Swimming Pool, Lift, Parking)'),
-                ])->columns(2),
+                        Forms\Components\Select::make('property_sub_type')
+                            ->label('Category / Sub-Type')
+                            ->options(fn (Get $get): array => $get('asset_type') === 'Vehicle' ? [
+                                'Commercial Truck' => 'Commercial Truck',
+                                'Car / SUV' => 'Car / SUV',
+                                'Bus / Van' => 'Bus / Van',
+                                'Construction / JCB' => 'Construction / JCB',
+                                'Tractor / Agro' => 'Tractor / Agro',
+                                'Two Wheeler' => 'Two Wheeler',
+                                'Other Vehicle' => 'Other Vehicle',
+                            ] : [
+                                'Apartment / Flat' => 'Apartment / Flat',
+                                'Row House / Tenement' => 'Row House / Tenement',
+                                'Bungalow / Villa' => 'Bungalow / Villa',
+                                'Commercial Shop' => 'Commercial Shop',
+                                'Office Space' => 'Office Space',
+                                'Industrial / Factory' => 'Industrial / Factory',
+                                'Agricultural Land' => 'Agricultural Land',
+                                'Residential Plot / NA' => 'Residential Plot / NA',
+                                'Penthouse' => 'Penthouse',
+                            ])
+                            ->searchable()
+                            ->required(),
 
-                // Tab 4: Seized Vehicle Specifications
-                Forms\Components\Tabs\Tab::make('Seized Vehicle Specs')->schema([
-                    Forms\Components\TextInput::make('vehicle_category')->placeholder('Car / SUV, Commercial Truck'),
-                    Forms\Components\TextInput::make('vehicle_model')->placeholder('Tata Signa, Mahindra Bolero'),
-                    Forms\Components\TextInput::make('vehicle_make_year')->numeric(),
-                    Forms\Components\TextInput::make('vehicle_km_driven')->numeric(),
-                    Forms\Components\TextInput::make('vehicle_fuel_type')->placeholder('Diesel, Petrol, CNG'),
-                    Forms\Components\TextInput::make('vehicle_transmission')->placeholder('Manual, Automatic'),
-                    Forms\Components\TextInput::make('vehicle_reg_number')->placeholder('GJ-05-BX-4921'),
-                    Forms\Components\TagsInput::make('vehicle_inspection_features')
-                        ->placeholder('Engine Condition, Tyre Tread, RC Status'),
-                ])->columns(2),
+                        Forms\Components\TextInput::make('title')
+                            ->label('Property Title')
+                            ->placeholder('e.g. 3 BHK Ultra Luxury Apartment in Vesu')
+                            ->required()
+                            ->maxLength(220),
 
-                // Tab 5: Bank Auction & SARFAESI
-                Forms\Components\Tabs\Tab::make('Bank Auction / SARFAESI')->schema([
-                    Forms\Components\Toggle::make('is_bank_auction')->label('SARFAESI Bank Auction')->default(false),
-                    Forms\Components\TextInput::make('bank_name')->placeholder('State Bank of India, Bank of Baroda'),
-                    Forms\Components\TextInput::make('auction_date')->placeholder('25 Nov 2026 11:00 AM'),
-                    Forms\Components\DateTimePicker::make('auction_timestamp'),
-                    Forms\Components\TextInput::make('reserve_price')->numeric()->prefix('₹'),
-                    Forms\Components\TextInput::make('emd_amount')->numeric()->prefix('₹'),
-                    Forms\Components\TextInput::make('borrower_name')->placeholder('Defaulting Borrower / Company'),
-                    Forms\Components\TextInput::make('bank_branch_or_yard')->placeholder('SARB Branch or Yard Address'),
-                    Forms\Components\TextInput::make('notice_pdf_url')->placeholder('https://.../notice.pdf')->url(),
-                    Forms\Components\Select::make('auction_status')
-                        ->options([
-                            'Upcoming' => 'Upcoming',
-                            'Live' => 'Live Now',
-                            'Concluded' => 'Concluded / Closed',
-                        ])
-                        ->default('Upcoming'),
-                ])->columns(2),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Full Description')
+                            ->placeholder('Describe the property, features, nearby landmarks, etc.')
+                            ->rows(4),
+                    ]),
 
-                // Tab 6: Moderation
-                Forms\Components\Tabs\Tab::make('Admin Moderation')->schema([
-                    Forms\Components\Textarea::make('admin_review_note')
-                        ->label('Internal Admin Review Notes')
-                        ->placeholder('Notes regarding verification, physical inspection, or document checks.')
-                        ->columnSpanFull(),
-                ]),
-            ])->columnSpanFull()
+                // STEP 2: Pricing & Location
+                Forms\Components\Wizard\Step::make('Price & Location')
+                    ->icon('heroicon-o-currency-rupee')
+                    ->description('Pricing and address details')
+                    ->schema([
+                        Forms\Components\Grid::make(3)->schema([
+                            Forms\Components\TextInput::make('price')
+                                ->label('Actual Price (Numeric)')
+                                ->numeric()
+                                ->prefix('₹')
+                                ->placeholder('12500000')
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    if ($state && is_numeric($state)) {
+                                        if ($state >= 10000000) {
+                                            $cr = round($state / 10000000, 2);
+                                            $set('price_display', "₹ {$cr} Cr");
+                                        } elseif ($state >= 100000) {
+                                            $lacs = round($state / 100000, 2);
+                                            $set('price_display', "₹ {$lacs} Lacs");
+                                        } else {
+                                            $set('price_display', "₹ " . number_format($state));
+                                        }
+                                    }
+                                }),
+                            Forms\Components\TextInput::make('price_display')
+                                ->label('Display Price (Formatted)')
+                                ->placeholder('e.g. ₹ 1.25 Cr')
+                                ->required(),
+                            Forms\Components\TextInput::make('price_per_sqft')
+                                ->label('Price Per Sq.Ft')
+                                ->placeholder('e.g. ₹ 6,500/sq.ft'),
+                        ]),
+
+                        Forms\Components\Grid::make(3)->schema([
+                            Forms\Components\Select::make('city')
+                                ->label('City')
+                                ->options(fn () => City::pluck('name', 'name')->toArray())
+                                ->searchable()
+                                ->default('Surat')
+                                ->required(),
+                            Forms\Components\TextInput::make('locality')
+                                ->label('Locality / Area')
+                                ->placeholder('e.g. Vesu, Adajan, Pal')
+                                ->required(),
+                            Forms\Components\TextInput::make('pincode')
+                                ->label('Pincode')
+                                ->placeholder('e.g. 395007'),
+                        ]),
+
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('society_or_yard')
+                                ->label('Society / Building / Yard Name')
+                                ->placeholder('e.g. Avadh Copper Stone'),
+                            Forms\Components\TextInput::make('contact_phone')
+                                ->label('Contact Phone')
+                                ->tel()
+                                ->placeholder('+91 98765 43210')
+                                ->required(),
+                        ]),
+
+                        Forms\Components\Toggle::make('is_negotiable')
+                            ->label('Price is Negotiable')
+                            ->default(true),
+                    ]),
+
+                // STEP 3: Specifications
+                Forms\Components\Wizard\Step::make('Specifications')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->description('Dimensions, features and amenities')
+                    ->schema([
+                        // Property-specific fields
+                        Forms\Components\Section::make('Real Estate Specs')
+                            ->visible(fn (Get $get): bool => $get('asset_type') !== 'Vehicle')
+                            ->schema([
+                                Forms\Components\Grid::make(3)->schema([
+                                    Forms\Components\Select::make('bhk')
+                                        ->label('Configuration (BHK)')
+                                        ->options([
+                                            '1 RK' => '1 RK',
+                                            '1 BHK' => '1 BHK',
+                                            '2 BHK' => '2 BHK',
+                                            '3 BHK' => '3 BHK',
+                                            '4 BHK' => '4 BHK',
+                                            '5+ BHK' => '5+ BHK',
+                                            'Duplex' => 'Duplex',
+                                            'Penthouse' => 'Penthouse',
+                                            'Commercial' => 'Commercial Space',
+                                            'Plot' => 'Open Plot',
+                                        ]),
+                                    Forms\Components\Select::make('bathrooms')
+                                        ->label('Bathrooms')
+                                        ->options([
+                                            '1 Bathroom' => '1',
+                                            '2 Bathrooms' => '2',
+                                            '3 Bathrooms' => '3',
+                                            '4+ Bathrooms' => '4+',
+                                        ]),
+                                    Forms\Components\Select::make('balconies')
+                                        ->label('Balconies')
+                                        ->options([
+                                            'None' => '0',
+                                            '1 Balcony' => '1',
+                                            '2 Balconies' => '2',
+                                            '3+ Balconies' => '3+',
+                                        ]),
+                                ]),
+                                Forms\Components\Grid::make(3)->schema([
+                                    Forms\Components\TextInput::make('area_value')
+                                        ->label('Area Size')
+                                        ->numeric()
+                                        ->placeholder('1850'),
+                                    Forms\Components\Select::make('area_unit')
+                                        ->label('Area Unit')
+                                        ->options([
+                                            'Sq.Ft' => 'Sq.Ft',
+                                            'Sq.Yards' => 'Sq.Yards',
+                                            'Vigha' => 'Vigha',
+                                            'Acre' => 'Acre',
+                                        ])
+                                        ->default('Sq.Ft'),
+                                    Forms\Components\Select::make('area_type')
+                                        ->label('Area Type')
+                                        ->options([
+                                            'Super Built-up Area' => 'Super Built-up Area',
+                                            'Carpet Area' => 'Carpet Area',
+                                            'Plot Area' => 'Plot Area',
+                                        ])
+                                        ->default('Super Built-up Area'),
+                                ]),
+                                Forms\Components\Select::make('furnishing')
+                                    ->label('Furnishing Status')
+                                    ->options([
+                                        'Unfurnished' => 'Unfurnished',
+                                        'Semi-Furnished' => 'Semi-Furnished',
+                                        'Fully Furnished' => 'Fully Furnished',
+                                    ])
+                                    ->default('Unfurnished'),
+                                Forms\Components\TagsInput::make('amenities')
+                                    ->label('Amenities')
+                                    ->placeholder('Type and hit Enter (e.g. Lift, Parking, Gym, Pool)'),
+                            ]),
+
+                        // Vehicle-specific fields
+                        Forms\Components\Section::make('Vehicle Specs')
+                            ->visible(fn (Get $get): bool => $get('asset_type') === 'Vehicle')
+                            ->schema([
+                                Forms\Components\Grid::make(2)->schema([
+                                    Forms\Components\TextInput::make('vehicle_category')
+                                        ->label('Vehicle Category')
+                                        ->placeholder('Commercial Truck, Tipper, Car'),
+                                    Forms\Components\TextInput::make('vehicle_model')
+                                        ->label('Model Name')
+                                        ->placeholder('e.g. Tata Signa 2823.K'),
+                                    Forms\Components\TextInput::make('vehicle_make_year')
+                                        ->label('Manufacturing Year')
+                                        ->numeric()
+                                        ->placeholder('2022'),
+                                    Forms\Components\TextInput::make('vehicle_km_driven')
+                                        ->label('Kilometers Driven')
+                                        ->numeric()
+                                        ->placeholder('65000'),
+                                    Forms\Components\Select::make('vehicle_fuel_type')
+                                        ->label('Fuel Type')
+                                        ->options([
+                                            'Diesel' => 'Diesel',
+                                            'Petrol' => 'Petrol',
+                                            'CNG' => 'CNG',
+                                            'Electric' => 'Electric',
+                                        ]),
+                                    Forms\Components\Select::make('vehicle_transmission')
+                                        ->label('Transmission')
+                                        ->options([
+                                            'Manual' => 'Manual',
+                                            'Automatic' => 'Automatic',
+                                        ]),
+                                    Forms\Components\TextInput::make('vehicle_reg_number')
+                                        ->label('Registration (RTO Number)')
+                                        ->placeholder('GJ-05-XX-1234'),
+                                    Forms\Components\TextInput::make('vehicle_owner_type')
+                                        ->label('Ownership')
+                                        ->placeholder('First Owner (Hypothecated)'),
+                                ]),
+                                Forms\Components\TagsInput::make('vehicle_inspection_features')
+                                    ->label('Inspection Checklist')
+                                    ->placeholder('Add inspection detail (e.g. Tyres 80%, Clean Chassis)'),
+                            ]),
+                    ]),
+
+                // STEP 4: Bank Auction (Optional)
+                Forms\Components\Wizard\Step::make('Bank Auction')
+                    ->icon('heroicon-o-scale')
+                    ->description('SARFAESI / Distressed Asset Info')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_bank_auction')
+                            ->label('Mark as Bank Auction / Seized Asset')
+                            ->default(false)
+                            ->live(),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('bank_name')
+                                ->label('Bank Name')
+                                ->placeholder('e.g. State Bank of India')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('borrower_name')
+                                ->label('Borrower / NPA Account')
+                                ->placeholder('Borrower / Company Name')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('reserve_price')
+                                ->label('Reserve Price (₹)')
+                                ->numeric()
+                                ->prefix('₹')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('emd_amount')
+                                ->label('EMD Amount (₹)')
+                                ->numeric()
+                                ->prefix('₹')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('auction_date')
+                                ->label('Auction Date (Text Display)')
+                                ->placeholder('e.g. 25 Nov 2026 11:00 AM')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\DateTimePicker::make('auction_timestamp')
+                                ->label('Auction Exact Date/Time')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('bank_branch_or_yard')
+                                ->label('Branch / Vehicle Yard')
+                                ->placeholder('e.g. SARB Branch, Ring Road, Surat')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\TextInput::make('notice_pdf_url')
+                                ->label('Auction Notice PDF URL')
+                                ->url()
+                                ->placeholder('https://...')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                            Forms\Components\Select::make('auction_status')
+                                ->label('Auction Status')
+                                ->options([
+                                    'Upcoming' => 'Upcoming',
+                                    'Live' => 'Live Now',
+                                    'Concluded' => 'Concluded / Closed',
+                                ])
+                                ->default('Upcoming')
+                                ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
+                        ]),
+                    ]),
+
+                // STEP 5: Photos & Status
+                Forms\Components\Wizard\Step::make('Photos & Publishing')
+                    ->icon('heroicon-o-photo')
+                    ->description('Upload pictures & set visibility')
+                    ->schema([
+                        Forms\Components\Repeater::make('images')
+                            ->label('Property Photos')
+                            ->relationship('images')
+                            ->schema([
+                                Forms\Components\FileUpload::make('image_url')
+                                    ->label('Upload Image')
+                                    ->image()
+                                    ->disk('public')
+                                    ->directory('properties')
+                                    ->visibility('public')
+                                    ->columnSpan(2),
+                                Forms\Components\TextInput::make('label')
+                                    ->label('Photo Tag')
+                                    ->default('Photo')
+                                    ->columnSpan(1),
+                                Forms\Components\Toggle::make('is_cover')
+                                    ->label('Main Cover')
+                                    ->default(false)
+                                    ->columnSpan(1),
+                            ])
+                            ->columns(4)
+                            ->defaultItems(1)
+                            ->collapsible()
+                            ->reorderable('sort_order'),
+
+                        Forms\Components\Grid::make(3)->schema([
+                            Forms\Components\Select::make('status')
+                                ->label('Status')
+                                ->options([
+                                    'Active' => 'Active (Live on App)',
+                                    'Under Review' => 'Under Review',
+                                    'Sold / Rented' => 'Sold / Rented',
+                                    'Rejected' => 'Rejected',
+                                ])
+                                ->default('Active')
+                                ->required(),
+                            Forms\Components\Toggle::make('is_verified')
+                                ->label('Verified Badge')
+                                ->default(true),
+                            Forms\Components\Toggle::make('is_featured')
+                                ->label('Featured (Top of Feed)')
+                                ->default(false),
+                        ]),
+
+                        Forms\Components\Textarea::make('admin_review_note')
+                            ->label('Internal Admin Notes')
+                            ->placeholder('Any internal notes about this listing...')
+                            ->columnSpanFull(),
+                    ]),
+            ])
+            ->skippable()
+            ->columnSpanFull()
         ]);
     }
 
@@ -163,31 +429,26 @@ class PropertyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('property_code')
-                    ->label('Code')
-                    ->badge()
-                    ->color('warning')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\ImageColumn::make('coverImage.image_url')
+                    ->label('')
+                    ->circular()
+                    ->defaultImageUrl('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=120&q=60'),
                 Tables\Columns\TextColumn::make('title')
-                    ->limit(35)
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('city')
-                    ->sortable(),
+                    ->label('Property / Code')
+                    ->description(fn (Property $record): string => 
+                        '#' . ($record->property_code ?? '---') . ' • ' . $record->property_sub_type . ' • ' . $record->intent
+                    )
+                    ->searchable(['title', 'property_code', 'property_sub_type', 'locality'])
+                    ->wrap()
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('locality')
-                    ->searchable(),
+                    ->label('Location')
+                    ->description(fn (Property $record): string => $record->city)
+                    ->searchable(['locality', 'city']),
                 Tables\Columns\TextColumn::make('price_display')
                     ->label('Price')
+                    ->description(fn (Property $record): ?string => $record->price_per_sqft)
                     ->sortable('price'),
-                Tables\Columns\TextColumn::make('asset_type')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Vehicle' => 'info',
-                        default => 'success',
-                    }),
-                Tables\Columns\IconColumn::make('is_bank_auction')
-                    ->label('Auction')
-                    ->boolean(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -197,13 +458,20 @@ class PropertyResource extends Resource
                         'Rejected' => 'danger',
                         default => 'secondary',
                     }),
+                Tables\Columns\IconColumn::make('is_bank_auction')
+                    ->label('Auction')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('is_verified')
                     ->label('Verified')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('views_count')
                     ->label('Views')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -224,55 +492,50 @@ class PropertyResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_bank_auction')
                     ->label('Bank Auction'),
                 Tables\Filters\SelectFilter::make('city')
-                    ->options([
-                        'Surat' => 'Surat',
-                        'Ahmedabad' => 'Ahmedabad',
-                        'Vadodara' => 'Vadodara',
-                        'Rajkot' => 'Rajkot',
-                        'Mumbai' => 'Mumbai',
-                    ]),
+                    ->options(fn () => City::pluck('name', 'name')->toArray()),
             ])
             ->actions([
-                // Quick Assign Property Code Action
-                Tables\Actions\Action::make('assignCode')
-                    ->label('Assign Code')
-                    ->icon('heroicon-o-identification')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\TextInput::make('property_code')
-                            ->label('Assign Unique Property Code (e.g. 032)')
-                            ->required()
-                            ->default(fn (Property $record) => $record->property_code),
-                    ])
-                    ->action(function (Property $record, array $data) {
-                        $record->update(['property_code' => $data['property_code']]);
-                        Notification::make()
-                            ->title('Property Code Assigned')
-                            ->body("Code {$data['property_code']} assigned successfully.")
-                            ->success()
-                            ->send();
-                    }),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('approve')
+                        ->label('Approve & Publish')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Property $record) {
+                            $record->update([
+                                'status' => 'Active',
+                                'is_verified' => true,
+                            ]);
+                            Notification::make()
+                                ->title('Property Approved')
+                                ->body("Property #{$record->property_code} is now Live on the App.")
+                                ->success()
+                                ->send();
+                        })
+                        ->visible(fn (Property $record) => $record->status !== 'Active'),
 
-                // Quick Approve Action
-                Tables\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(function (Property $record) {
-                        $record->update([
-                            'status' => 'Active',
-                            'is_verified' => true,
-                        ]);
-                        Notification::make()
-                            ->title('Property Approved')
-                            ->body('Property is now Active on user feeds.')
-                            ->success()
-                            ->send();
-                    })
-                    ->visible(fn (Property $record) => $record->status !== 'Active'),
+                    Tables\Actions\Action::make('assignCode')
+                        ->label('Set Code')
+                        ->icon('heroicon-o-identification')
+                        ->color('warning')
+                        ->form([
+                            Forms\Components\TextInput::make('property_code')
+                                ->label('Assign 3-digit Code (e.g. 032)')
+                                ->required()
+                                ->default(fn (Property $record) => $record->property_code),
+                        ])
+                        ->action(function (Property $record, array $data) {
+                            $record->update(['property_code' => $data['property_code']]);
+                            Notification::make()
+                                ->title('Property Code Updated')
+                                ->body("Code {$data['property_code']} assigned.")
+                                ->success()
+                                ->send();
+                        }),
 
-                Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -290,4 +553,3 @@ class PropertyResource extends Resource
         ];
     }
 }
-

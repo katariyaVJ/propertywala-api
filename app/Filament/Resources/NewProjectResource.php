@@ -46,14 +46,26 @@ class NewProjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('developer_name')->searchable(),
-                Tables\Columns\TextColumn::make('city')->sortable(),
-                Tables\Columns\TextColumn::make('locality')->searchable(),
-                Tables\Columns\TextColumn::make('price_range'),
-                Tables\Columns\TextColumn::make('rera_number')->badge()->color('success'),
-                Tables\Columns\IconColumn::make('is_featured')->boolean(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime('d M Y')->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Project / Developer')
+                    ->description(fn (NewProject $record): string => $record->developer_name . ' • RERA: ' . $record->rera_number)
+                    ->searchable(['name', 'developer_name', 'rera_number'])
+                    ->weight('bold')
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('locality')
+                    ->label('Location')
+                    ->description(fn (NewProject $record): string => $record->city)
+                    ->searchable(['locality', 'city']),
+                Tables\Columns\TextColumn::make('price_range')
+                    ->label('Price Range')
+                    ->description(fn (NewProject $record): ?string => $record->bhk_options),
+                Tables\Columns\IconColumn::make('is_featured')
+                    ->label('Featured')
+                    ->boolean(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime('d M Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('city')->options([
@@ -61,9 +73,13 @@ class NewProjectResource extends Resource
                     'Ahmedabad' => 'Ahmedabad',
                     'Vadodara' => 'Vadodara',
                 ]),
+                Tables\Filters\TernaryFilter::make('is_featured')->label('Featured Only'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ]);
     }
 

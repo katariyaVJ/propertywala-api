@@ -54,8 +54,11 @@ class ServiceProfessionalResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable(),
-                Tables\Columns\TextColumn::make('firm_name')->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Expert Name')
+                    ->description(fn (ServiceProfessional $r): string => $r->firm_name)
+                    ->searchable(['name', 'firm_name'])
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('category')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -63,8 +66,10 @@ class ServiceProfessionalResource extends Resource
                         'Banker (for Loan)' => 'info',
                         default => 'success',
                     }),
-                Tables\Columns\TextColumn::make('city'),
-                Tables\Columns\TextColumn::make('phone'),
+                Tables\Columns\TextColumn::make('city')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('phone')
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -73,7 +78,11 @@ class ServiceProfessionalResource extends Resource
                         'Rejected' => 'danger',
                         default => 'secondary',
                     }),
-                Tables\Columns\TextColumn::make('rating')->sortable(),
+                Tables\Columns\TextColumn::make('rating')
+                    ->sortable()
+                    ->badge()
+                    ->color('warning')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('category')->options([
@@ -88,24 +97,26 @@ class ServiceProfessionalResource extends Resource
                 ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->action(function (ServiceProfessional $record) {
-                        $record->update(['status' => 'Approved']);
-                    })
-                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved'),
-                Tables\Actions\Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (ServiceProfessional $record) {
-                        $record->update(['status' => 'Rejected']);
-                    })
-                    ->visible(fn (ServiceProfessional $record) => $record->status === 'Pending'),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('approve')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(function (ServiceProfessional $record) {
+                            $record->update(['status' => 'Approved']);
+                        })
+                        ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved'),
+                    Tables\Actions\Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (ServiceProfessional $record) {
+                            $record->update(['status' => 'Rejected']);
+                        })
+                        ->visible(fn (ServiceProfessional $record) => $record->status === 'Pending'),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ]);
     }
 

@@ -68,25 +68,27 @@ class PropertyReportResource extends Resource
                 ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('delist')
-                    ->label('Delist Property')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (PropertyReport $record) {
-                        $record->property?->update(['status' => 'Rejected', 'is_deleted' => true]);
-                        $record->update(['status' => 'Delisted', 'admin_notes' => 'Property delisted due to verified report']);
-                    })
-                    ->visible(fn (PropertyReport $record) => $record->status === 'Pending'),
-                Tables\Actions\Action::make('dismiss')
-                    ->label('Dismiss')
-                    ->icon('heroicon-o-check')
-                    ->color('gray')
-                    ->action(function (PropertyReport $record) {
-                        $record->update(['status' => 'Dismissed']);
-                    })
-                    ->visible(fn (PropertyReport $record) => $record->status === 'Pending'),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('delist')
+                        ->label('Delist Property')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (PropertyReport $record) {
+                            $record->property?->update(['status' => 'Rejected', 'is_deleted' => true]);
+                            $record->update(['status' => 'Delisted', 'admin_action_taken' => 'Property delisted due to verified report']);
+                        })
+                        ->visible(fn (PropertyReport $record) => $record->status === 'Pending'),
+                    Tables\Actions\Action::make('dismiss')
+                        ->label('Dismiss')
+                        ->icon('heroicon-o-check')
+                        ->color('gray')
+                        ->action(function (PropertyReport $record) {
+                            $record->update(['status' => 'Dismissed']);
+                        })
+                        ->visible(fn (PropertyReport $record) => $record->status === 'Pending'),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ]);
     }
 
