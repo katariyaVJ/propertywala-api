@@ -3,13 +3,15 @@
        Propertywala Ultra-Modern & Premium Admin Theme (Light)
        ======================================================== */
     :root {
-        --primary-50: #f5f3ff;
-        --primary-100: #ede9fe;
-        --primary-200: #ddd6fe;
-        --primary-500: #8b5cf6;
-        --primary-600: #7c3aed;
-        --primary-700: #6d28d9;
-        --primary-800: #5b21b6;
+        --primary-50: 245, 243, 255;
+        --primary-100: 237, 233, 254;
+        --primary-200: 221, 214, 254;
+        --primary-300: 196, 181, 253;
+        --primary-400: 167, 139, 250;
+        --primary-500: 139, 92, 246;
+        --primary-600: 124, 58, 237;
+        --primary-700: 109, 40, 217;
+        --primary-800: 91, 33, 182;
         --surface-bg: #f8fafc;
         --card-bg: #ffffff;
         --border-color: #e2e8f0;
@@ -127,8 +129,15 @@
     }
 
     /* Buttons - Universal Filament v3 Button Styling */
+    .fi-header .fi-ac a.fi-btn,
+    .fi-header .fi-ac button.fi-btn,
+    .fi-header a.fi-btn,
+    .fi-header button.fi-btn,
+    a.fi-btn[href*="/create"],
+    button[type="submit"].fi-btn,
     .fi-btn-primary,
     .fi-btn.fi-color-primary,
+    .fi-btn.fi-color-custom,
     a.fi-btn.fi-color-primary,
     button.fi-btn.fi-color-primary,
     .fi-ac-action.fi-color-primary,
@@ -139,36 +148,56 @@
         border-radius: 10px !important;
         color: #ffffff !important;
         font-weight: 600 !important;
-        box-shadow: 0 2px 6px rgba(109, 40, 217, 0.35) !important;
+        box-shadow: 0 4px 12px rgba(109, 40, 217, 0.35) !important;
         transition: all 0.2s ease !important;
         opacity: 1 !important;
         visibility: visible !important;
         display: inline-flex !important;
         align-items: center !important;
+        text-decoration: none !important;
     }
 
+    .fi-header .fi-ac a.fi-btn *,
+    .fi-header .fi-ac button.fi-btn *,
+    .fi-header a.fi-btn *,
+    .fi-header button.fi-btn *,
+    a.fi-btn[href*="/create"] *,
+    button[type="submit"].fi-btn *,
     .fi-btn-primary span,
     .fi-btn.fi-color-primary span,
+    .fi-btn.fi-color-custom span,
     a.fi-btn.fi-color-primary span,
     button.fi-btn.fi-color-primary span,
     .fi-header-actions .fi-btn span,
     .fi-btn-primary svg,
     .fi-btn.fi-color-primary svg,
+    .fi-btn.fi-color-custom svg,
     a.fi-btn.fi-color-primary svg,
     button.fi-btn.fi-color-primary svg,
-    .fi-header-actions .fi-btn svg {
+    .fi-header-actions .fi-btn svg,
+    .fi-btn-label {
         color: #ffffff !important;
+        fill: #ffffff !important;
         opacity: 1 !important;
+        visibility: visible !important;
     }
 
+    .fi-header .fi-ac a.fi-btn:hover,
+    .fi-header .fi-ac button.fi-btn:hover,
+    .fi-header a.fi-btn:hover,
+    .fi-header button.fi-btn:hover,
+    a.fi-btn[href*="/create"]:hover,
+    button[type="submit"].fi-btn:hover,
     .fi-btn-primary:hover,
     .fi-btn.fi-color-primary:hover,
+    .fi-btn.fi-color-custom:hover,
     a.fi-btn.fi-color-primary:hover,
     button.fi-btn.fi-color-primary:hover,
     .fi-header-actions .fi-btn:hover {
         background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
+        background-color: #5b21b6 !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(109, 40, 217, 0.45) !important;
+        box-shadow: 0 6px 16px rgba(109, 40, 217, 0.45) !important;
     }
 
     /* Inputs & Form Fields */

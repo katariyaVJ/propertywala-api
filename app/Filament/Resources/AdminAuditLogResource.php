@@ -13,11 +13,32 @@ class AdminAuditLogResource extends Resource
 {
     protected static ?string $model = AdminAuditLog::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationGroup = 'System Settings';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
-    protected static ?int $navigationSort = 2;
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {

@@ -13,7 +13,9 @@ class ListProperties extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('New Property')
+                ->icon('heroicon-m-plus-circle'),
         ];
     }
 }

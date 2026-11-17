@@ -497,7 +497,7 @@ class PropertyResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('approve')
-                        ->label('Approve & Publish')
+                        ->label('Approve & Publish (Active)')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
@@ -507,12 +507,29 @@ class PropertyResource extends Resource
                                 'is_verified' => true,
                             ]);
                             Notification::make()
-                                ->title('Property Approved')
-                                ->body("Property #{$record->property_code} is now Live on the App.")
+                                ->title('Property Activated')
+                                ->body("Property #{$record->property_code} is now Live & Active on the App.")
                                 ->success()
                                 ->send();
                         })
                         ->visible(fn (Property $record) => $record->status !== 'Active'),
+
+                    Tables\Actions\Action::make('deactivate')
+                        ->label('Deactivate (Inactive)')
+                        ->icon('heroicon-o-no-symbol')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Property $record) {
+                            $record->update([
+                                'status' => 'Under Review',
+                            ]);
+                            Notification::make()
+                                ->title('Property Inactivated')
+                                ->body("Property #{$record->property_code} has been marked Inactive.")
+                                ->warning()
+                                ->send();
+                        })
+                        ->visible(fn (Property $record) => $record->status === 'Active'),
 
                     Tables\Actions\Action::make('assignCode')
                         ->label('Set Code')

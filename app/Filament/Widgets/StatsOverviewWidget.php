@@ -17,34 +17,33 @@ class StatsOverviewWidget extends BaseWidget
     {
         $totalProperties = Property::count();
         $activeProperties = Property::where('status', 'Active')->count();
-        $totalLeads = BuyerLead::count();
         $totalUsers = User::count();
-        $activePro = ProMembership::where('status', 'Active')->count();
+        $totalLeads = BuyerLead::count();
 
         return [
             Stat::make('Total Properties', $totalProperties)
-                ->description("{$activeProperties} Published & Active")
-                ->descriptionIcon('heroicon-m-check-badge')
+                ->description('All Real Estate & Assets')
+                ->descriptionIcon('heroicon-m-home-modern')
                 ->color('primary')
                 ->chart([3, 7, 12, 18, 24, 30, $totalProperties ?: 35]),
 
-            Stat::make('Buyer Inquiries', $totalLeads)
-                ->description('Forwarded to Verified Sellers')
-                ->descriptionIcon('heroicon-m-chat-bubble-bottom-center-text')
+            Stat::make('Active Listings', $activeProperties)
+                ->description('Live on Mobile App')
+                ->descriptionIcon('heroicon-m-check-badge')
                 ->color('success')
-                ->chart([2, 5, 10, 15, 22, 28, $totalLeads ?: 32]),
+                ->chart([2, 6, 10, 15, 20, 26, $activeProperties ?: 30]),
 
-            Stat::make('Registered Users', $totalUsers)
-                ->description('Owners, Buyers & Verified Agents')
+            Stat::make('Total Users', $totalUsers)
+                ->description('Registered Owners & Buyers')
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('info')
                 ->chart([5, 12, 20, 25, 30, 42, $totalUsers ?: 48]),
 
-            Stat::make('Pro Subscriptions', $activePro)
-                ->description('Active Revenue Members')
-                ->descriptionIcon('heroicon-m-sparkles')
+            Stat::make('Buyer Inquiries', $totalLeads)
+                ->description('Direct Leads Generated')
+                ->descriptionIcon('heroicon-m-chat-bubble-bottom-center-text')
                 ->color('warning')
-                ->chart([1, 2, 4, 6, 8, 12, $activePro ?: 15]),
+                ->chart([2, 5, 10, 15, 22, 28, $totalLeads ?: 32]),
         ];
     }
 }

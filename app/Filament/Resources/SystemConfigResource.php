@@ -14,11 +14,32 @@ class SystemConfigResource extends Resource
 {
     protected static ?string $model = SystemConfig::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationGroup = 'System Settings';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
-    protected static ?int $navigationSort = 1;
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {

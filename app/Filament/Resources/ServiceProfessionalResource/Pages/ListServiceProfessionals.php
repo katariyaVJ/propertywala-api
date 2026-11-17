@@ -14,7 +14,8 @@ class ListServiceProfessionals extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('New Professional'),
+                ->label('New Professional')
+                ->icon('heroicon-m-user-plus'),
         ];
     }
 }

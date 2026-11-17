@@ -14,11 +14,32 @@ class PushCampaignResource extends Resource
 {
     protected static ?string $model = PushCampaign::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationGroup = 'Marketing & Notifications';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
-    protected static ?int $navigationSort = 1;
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
