@@ -124,6 +124,7 @@ class ServiceProfessionalResource extends Resource
     {
         return [
             'index' => Pages\ListServiceProfessionals::route('/'),
+            'create' => Pages\CreateServiceProfessional::route('/create'),
             'edit' => Pages\EditServiceProfessional::route('/{record}/edit'),
         ];
     }

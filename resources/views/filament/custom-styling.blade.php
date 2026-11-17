@@ -126,20 +126,49 @@
         background-color: #f8f7ff !important;
     }
 
-    /* Buttons */
-    .fi-btn-primary {
+    /* Buttons - Universal Filament v3 Button Styling */
+    .fi-btn-primary,
+    .fi-btn.fi-color-primary,
+    a.fi-btn.fi-color-primary,
+    button.fi-btn.fi-color-primary,
+    .fi-ac-action.fi-color-primary,
+    .fi-header-actions .fi-btn {
         background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
-        border: none !important;
-        border-radius: 8px !important;
+        background-color: #6d28d9 !important;
+        border: 1px solid #5b21b6 !important;
+        border-radius: 10px !important;
         color: #ffffff !important;
         font-weight: 600 !important;
-        box-shadow: 0 2px 4px rgba(109, 40, 217, 0.25) !important;
+        box-shadow: 0 2px 6px rgba(109, 40, 217, 0.35) !important;
         transition: all 0.2s ease !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: inline-flex !important;
+        align-items: center !important;
     }
 
-    .fi-btn-primary:hover {
+    .fi-btn-primary span,
+    .fi-btn.fi-color-primary span,
+    a.fi-btn.fi-color-primary span,
+    button.fi-btn.fi-color-primary span,
+    .fi-header-actions .fi-btn span,
+    .fi-btn-primary svg,
+    .fi-btn.fi-color-primary svg,
+    a.fi-btn.fi-color-primary svg,
+    button.fi-btn.fi-color-primary svg,
+    .fi-header-actions .fi-btn svg {
+        color: #ffffff !important;
+        opacity: 1 !important;
+    }
+
+    .fi-btn-primary:hover,
+    .fi-btn.fi-color-primary:hover,
+    a.fi-btn.fi-color-primary:hover,
+    button.fi-btn.fi-color-primary:hover,
+    .fi-header-actions .fi-btn:hover {
+        background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(109, 40, 217, 0.35) !important;
+        box-shadow: 0 4px 12px rgba(109, 40, 217, 0.45) !important;
     }
 
     /* Inputs & Form Fields */
