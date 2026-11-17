@@ -12,6 +12,21 @@ class PropertyImage extends Model
 
     protected $guarded = ['id'];
 
+    protected static function booted(): void
+    {
+        static::saving(function (PropertyImage $image) {
+            // Guard against null/empty image_url to prevent DB constraint violation
+            if (empty($image->image_url)) {
+                $original = $image->getRawOriginal('image_url');
+                if (!empty($original)) {
+                    $image->image_url = $original;
+                } else {
+                    $image->image_url = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+                }
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

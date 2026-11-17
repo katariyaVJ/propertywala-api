@@ -374,12 +374,11 @@ class PropertyResource extends Resource
                             ->label('Property Photos')
                             ->relationship('images')
                             ->schema([
-                                Forms\Components\FileUpload::make('image_url')
-                                    ->label('Upload Image')
-                                    ->image()
-                                    ->disk('public')
-                                    ->directory('properties')
-                                    ->visibility('public')
+                                Forms\Components\TextInput::make('image_url')
+                                    ->label('Photo URL / Image Link')
+                                    ->placeholder('https://images.unsplash.com/... or image path')
+                                    ->default('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80')
+                                    ->required()
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('label')
                                     ->label('Photo Tag')
@@ -391,7 +390,7 @@ class PropertyResource extends Resource
                                     ->columnSpan(1),
                             ])
                             ->columns(4)
-                            ->defaultItems(1)
+                            ->defaultItems(0)
                             ->collapsible()
                             ->reorderable('sort_order'),
 
