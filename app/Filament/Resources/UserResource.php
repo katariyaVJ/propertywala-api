@@ -38,6 +38,15 @@ class UserResource extends Resource
                 ->email()
                 ->label('Email Address')
                 ->unique(ignoreRecord: true),
+            Forms\Components\TextInput::make('password')
+                ->password()
+                ->revealable()
+                ->label('Password')
+                ->minLength(6)
+                ->maxLength(100)
+                ->dehydrated(fn ($state) => filled($state))
+                ->required(fn (string $context): bool => $context === 'create')
+                ->helperText('Required when creating a user. Leave empty on edit to keep current password.'),
             Forms\Components\Select::make('role')
                 ->options([
                     'Buyer / Tenant' => 'Buyer / Tenant',
@@ -81,10 +90,11 @@ class UserResource extends Resource
                     ->copyable(),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'admin' => 'danger',
-                        'builder' => 'warning',
+                    ->color(fn (string $state): string => match (strtolower($state)) {
+                        'admin', 'superadmin' => 'danger',
+                        'builder', 'builder / developer' => 'warning',
                         'banker' => 'info',
+                        'service expert', 'professional' => 'primary',
                         default => 'success',
                     }),
                 Tables\Columns\TextColumn::make('city')
@@ -103,15 +113,18 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('role')->options([
-                    'user' => 'User',
-                    'owner' => 'Owner',
-                    'agent' => 'Agent',
-                    'builder' => 'Builder',
-                    'banker' => 'Banker',
-                    'professional' => 'Professional',
-                    'admin' => 'Admin',
+                    'Buyer / Tenant' => 'Buyer / Tenant',
+                    'Property Owner' => 'Property Owner',
+                    'Real Estate Agent' => 'Real Estate Agent',
+                    'Builder / Developer' => 'Builder / Developer',
+                    'Banker' => 'Bank Officer',
+                    'Service Expert' => 'Service Expert',
+                    'owner' => 'Owner (Legacy)',
+                    'agent' => 'Agent (Legacy)',
+                    'admin' => 'Administrator',
                 ]),
                 Tables\Filters\TernaryFilter::make('is_blocked')->label('Blocked Users'),
             ])

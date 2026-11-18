@@ -20,6 +20,18 @@ class BuyerLeadResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getNavigationBadge(): ?string
+    {
+        $newLeads = static::getModel()::where('status', 'New')->count();
+
+        return $newLeads > 0 ? (string) $newLeads : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'info';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -28,8 +40,10 @@ class BuyerLeadResource extends Resource
                 ->disabled(),
             Forms\Components\TextInput::make('buyer_name')->disabled(),
             Forms\Components\TextInput::make('buyer_phone')->disabled(),
+            Forms\Components\TextInput::make('buyer_email')->disabled(),
             Forms\Components\TextInput::make('intent')->disabled(),
             Forms\Components\TextInput::make('timeline')->disabled(),
+            Forms\Components\TextInput::make('source')->disabled(),
             Forms\Components\Select::make('status')
                 ->options([
                     'New' => 'New',
@@ -52,7 +66,8 @@ class BuyerLeadResource extends Resource
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('property.title')
                     ->label('Property Inquired')
-                    ->description(fn (BuyerLead $r): string => 'Code: #' . ($r->property->property_code ?? 'N/A'))
+                    ->placeholder('Deleted Property')
+                    ->description(fn (BuyerLead $r): string => 'Code: #' . ($r->property?->property_code ?? 'N/A'))
                     ->wrap()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('intent')
@@ -74,6 +89,7 @@ class BuyerLeadResource extends Resource
                     ->dateTime('d M Y')
                     ->sortable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([

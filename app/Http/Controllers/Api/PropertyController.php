@@ -7,9 +7,11 @@ use App\Models\ProContactUnlock;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\SavedProperty;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class PropertyController extends Controller
@@ -182,8 +184,6 @@ class PropertyController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $user = $request->user();
-
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:220'],
             'intent' => ['required', 'string', 'in:Sell,Rent,Bank Auction'],
@@ -212,21 +212,76 @@ class PropertyController extends Controller
             'description' => ['nullable', 'string'],
             'contact_phone' => ['nullable', 'string', 'max:20'],
             'contactPhone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'posted_by_name' => ['nullable', 'string', 'max:120'],
+            'posted_by_role' => ['nullable', 'string', 'max:30'],
+            'is_bank_auction' => ['nullable', 'boolean'],
+            'bank_name' => ['nullable', 'string', 'max:80'],
+            'auction_date' => ['nullable', 'string', 'max:60'],
+            'reserve_price' => ['nullable', 'numeric'],
+            'emd_amount' => ['nullable', 'numeric'],
+            'borrower_name' => ['nullable', 'string', 'max:120'],
+            'bank_branch_or_yard' => ['nullable', 'string', 'max:140'],
+            'notice_pdf_url' => ['nullable', 'string', 'max:500'],
+            'auction_status' => ['nullable', 'string', 'max:30'],
+            'vehicle_category' => ['nullable', 'string', 'max:40'],
+            'vehicle_model' => ['nullable', 'string', 'max:120'],
+            'vehicle_make_year' => ['nullable', 'integer'],
+            'vehicle_km_driven' => ['nullable', 'integer'],
+            'vehicle_owner_type' => ['nullable', 'string', 'max:30'],
+            'vehicle_fuel_type' => ['nullable', 'string', 'max:30'],
+            'vehicle_transmission' => ['nullable', 'string', 'max:30'],
+            'vehicle_reg_number' => ['nullable', 'string', 'max:30'],
             'photos' => ['nullable', 'array'],
             'images' => ['nullable', 'array'],
         ]);
+
+        $user = $request->user('sanctum');
+        $contactPhone = $validated['contact_phone'] ?? $validated['contactPhone'] ?? $validated['phone'] ?? ($user ? $user->phone : '9876543210');
+
+        if (!$user) {
+            $phone = $contactPhone;
+            $user = User::firstOrCreate(
+                ['phone' => $phone],
+                [
+                    'name' => $validated['posted_by_name'] ?? 'Property Owner',
+                    'email' => 'user_' . substr(preg_replace('/[^0-9]/', '', $phone), -6) . '@propertywala.app',
+                    'password' => Hash::make('secret123'),
+                    'role' => 'owner',
+                    'city' => $validated['city'] ?? 'Surat',
+                    'is_phone_verified' => true,
+                ]
+            );
+        }
 
         $assetType = $validated['asset_type'] ?? $validated['assetType'] ?? 'Property';
         $subType = $validated['property_sub_type'] ?? $validated['subType'] ?? 'Apartment / Flat';
         $price = $validated['price'];
         $priceDisplay = $validated['price_display'] ?? $validated['priceDisplay'] ?? ('₹ ' . number_format($price));
-        $contactPhone = $validated['contact_phone'] ?? $validated['contactPhone'] ?? $user->phone;
+        $isBankAuction = (bool) ($validated['is_bank_auction'] ?? ($validated['intent'] === 'Bank Auction'));
+        $postedByRole = $validated['posted_by_role']
+            ?? ($isBankAuction ? 'Banker' : ($user->role === 'builder' ? 'Builder' : ($user->role === 'agent' ? 'Agent' : 'Owner')));
+
+        // Auto-assign sequential 3-digit Property Code (e.g. 033, 034...)
+        $maxNum = 32;
+        $allCodes = Property::withTrashed()->pluck('property_code')->toArray();
+        foreach ($allCodes as $c) {
+            if (is_numeric($c) && (int) $c > $maxNum) {
+                $maxNum = (int) $c;
+            }
+        }
+        $assignedCode = str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT);
+        while (Property::withTrashed()->where('property_code', $assignedCode)->exists()) {
+            $maxNum++;
+            $assignedCode = str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT);
+        }
 
         DB::beginTransaction();
         try {
             $property = Property::create([
+                'property_code' => $assignedCode,
                 'user_id' => $user->id,
-                'posted_by_role' => $user->role === 'builder' ? 'Builder' : ($user->role === 'agent' ? 'Agent' : 'Owner'),
+                'posted_by_role' => $postedByRole,
                 'intent' => $validated['intent'],
                 'asset_type' => $assetType,
                 'property_sub_type' => $subType,
@@ -246,18 +301,47 @@ class PropertyController extends Controller
                 'area_unit' => $validated['area_unit'] ?? $validated['areaUnit'] ?? 'Sq.Ft',
                 'furnishing' => $validated['furnishing'] ?? null,
                 'amenities' => $validated['amenities'] ?? [],
+                'is_bank_auction' => $isBankAuction,
+                'bank_name' => $validated['bank_name'] ?? null,
+                'auction_date' => $validated['auction_date'] ?? null,
+                'reserve_price' => $validated['reserve_price'] ?? ($isBankAuction ? $price : null),
+                'emd_amount' => $validated['emd_amount'] ?? null,
+                'borrower_name' => $validated['borrower_name'] ?? null,
+                'bank_branch_or_yard' => $validated['bank_branch_or_yard'] ?? null,
+                'notice_pdf_url' => $validated['notice_pdf_url'] ?? null,
+                'auction_status' => $isBankAuction ? ($validated['auction_status'] ?? 'Upcoming') : null,
+                'vehicle_category' => $validated['vehicle_category'] ?? null,
+                'vehicle_model' => $validated['vehicle_model'] ?? null,
+                'vehicle_make_year' => $validated['vehicle_make_year'] ?? null,
+                'vehicle_km_driven' => $validated['vehicle_km_driven'] ?? null,
+                'vehicle_owner_type' => $validated['vehicle_owner_type'] ?? null,
+                'vehicle_fuel_type' => $validated['vehicle_fuel_type'] ?? null,
+                'vehicle_transmission' => $validated['vehicle_transmission'] ?? null,
+                'vehicle_reg_number' => $validated['vehicle_reg_number'] ?? null,
                 'contact_phone' => $contactPhone,
                 'status' => 'Under Review',
+                'is_verified' => false,
             ]);
 
             // Save photos
             $photos = $validated['photos'] ?? $validated['images'] ?? [];
+            if (empty($photos)) {
+                $photos = [
+                    [
+                        'image_url' => 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+                        'label' => 'Living Room',
+                        'is_cover' => true,
+                    ]
+                ];
+            }
+
             foreach ($photos as $index => $photo) {
+                $imgUrl = $photo['url'] ?? $photo['image_url'] ?? $photo['image'] ?? 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
                 PropertyImage::create([
                     'property_id' => $property->id,
-                    'image_url' => $photo['url'] ?? $photo['image_url'],
-                    'thumbnail_url' => $photo['thumbnail_url'] ?? $photo['url'] ?? $photo['image_url'],
-                    'label' => $photo['label'] ?? 'Photo ' . ($index + 1),
+                    'image_url' => $imgUrl,
+                    'thumbnail_url' => $photo['thumbnail_url'] ?? $imgUrl,
+                    'label' => $photo['label'] ?? $photo['name'] ?? ('Photo ' . ($index + 1)),
                     'sort_order' => $index + 1,
                     'is_cover' => $photo['isCover'] ?? $photo['is_cover'] ?? ($index === 0),
                 ]);
@@ -303,11 +387,25 @@ class PropertyController extends Controller
      */
     public function myListings(Request $request): JsonResponse
     {
-        $properties = Property::with(['images', 'coverImage'])
-            ->where('user_id', $request->user()->id)
-            ->where('is_deleted', false)
-            ->latest()
-            ->get();
+        $user = $request->user('sanctum');
+        $phone = $request->query('phone') ?? $request->query('mobile') ?? $request->query('contact_phone');
+
+        $query = Property::with(['images', 'coverImage'])
+            ->where('is_deleted', false);
+
+        if ($user) {
+            $query->where('user_id', $user->id);
+        } elseif ($phone) {
+            $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+            $query->where(function ($q) use ($cleanPhone, $phone) {
+                $q->where('contact_phone', 'LIKE', "%{$cleanPhone}%")
+                  ->orWhere('contact_phone', 'LIKE', "%{$phone}%");
+            });
+        } else {
+            return $this->successResponse([], 'User listings retrieved successfully');
+        }
+
+        $properties = $query->latest()->get();
 
         return $this->successResponse($properties, 'User listings retrieved successfully');
     }

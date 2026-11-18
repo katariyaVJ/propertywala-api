@@ -25,6 +25,18 @@ class PropertyResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $pending = static::getModel()::where('status', 'Under Review')->count();
+
+        return $pending > 0 ? (string) $pending : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -80,6 +92,11 @@ class PropertyResource extends Resource
                                 ])
                                 ->default('Sell')
                                 ->live()
+                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    if ($state === 'Bank Auction') {
+                                        $set('is_bank_auction', true);
+                                    }
+                                })
                                 ->required(),
                         ]),
 
@@ -157,7 +174,14 @@ class PropertyResource extends Resource
                         Forms\Components\Grid::make(3)->schema([
                             Forms\Components\Select::make('city')
                                 ->label('City')
-                                ->options(fn () => City::pluck('name', 'name')->toArray())
+                                ->options(function (?Property $record): array {
+                                    $cities = City::pluck('name', 'name')->toArray();
+                                    if ($record && filled($record->city) && ! isset($cities[$record->city])) {
+                                        $cities[$record->city] = $record->city;
+                                    }
+
+                                    return $cities;
+                                })
                                 ->searchable()
                                 ->default('Surat')
                                 ->required(),
@@ -456,7 +480,8 @@ class PropertyResource extends Resource
                         'Sold / Rented' => 'gray',
                         'Rejected' => 'danger',
                         default => 'secondary',
-                    }),
+                    })
+                    ->description(fn (Property $record): ?string => $record->status === 'Rejected' ? $record->admin_review_note : null),
                 Tables\Columns\IconColumn::make('is_bank_auction')
                     ->label('Auction')
                     ->boolean()
@@ -475,6 +500,7 @@ class PropertyResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
@@ -516,7 +542,7 @@ class PropertyResource extends Resource
                     Tables\Actions\Action::make('deactivate')
                         ->label('Deactivate (Inactive)')
                         ->icon('heroicon-o-no-symbol')
-                        ->color('danger')
+                        ->color('warning')
                         ->requiresConfirmation()
                         ->action(function (Property $record) {
                             $record->update([
@@ -529,6 +555,29 @@ class PropertyResource extends Resource
                                 ->send();
                         })
                         ->visible(fn (Property $record) => $record->status === 'Active'),
+
+                    Tables\Actions\Action::make('reject')
+                        ->label('Reject Listing')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->form([
+                            Forms\Components\Textarea::make('rejection_reason')
+                                ->label('Reason for Rejection')
+                                ->placeholder('e.g. Incomplete details, invalid contact number, or unclear photos.')
+                                ->required(),
+                        ])
+                        ->action(function (Property $record, array $data) {
+                            $record->update([
+                                'status' => 'Rejected',
+                                'admin_review_note' => $data['rejection_reason'],
+                            ]);
+                            Notification::make()
+                                ->title('Property Rejected')
+                                ->body("Property #{$record->property_code} has been rejected with reason.")
+                                ->danger()
+                                ->send();
+                        })
+                        ->visible(fn (Property $record) => $record->status !== 'Rejected'),
 
                     Tables\Actions\Action::make('assignCode')
                         ->label('Set Code')

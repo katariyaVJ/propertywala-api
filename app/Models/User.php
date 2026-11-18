@@ -24,7 +24,8 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return in_array(strtolower((string) $this->role), ['admin', 'superadmin', 'super_admin'], true)
+            && ! $this->is_blocked;
     }
 
     protected function casts(): array

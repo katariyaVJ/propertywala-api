@@ -12,6 +12,7 @@
         --primary-600: 124, 58, 237;
         --primary-700: 109, 40, 217;
         --primary-800: 91, 33, 182;
+        --primary-900: 76, 29, 149;
         --surface-bg: #f8fafc;
         --card-bg: #ffffff;
         --border-color: #e2e8f0;
@@ -45,7 +46,7 @@
     }
 
     .fi-sidebar-group-label {
-        font-size: 0.75rem !important;
+        font-size: 0.72rem !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.06em !important;
@@ -72,7 +73,17 @@
     }
 
     .fi-sidebar-item-active .fi-sidebar-item-button svg,
-    .fi-sidebar-item-active .fi-sidebar-item-button span {
+    .fi-sidebar-item-active .fi-sidebar-item-label {
+        color: #ffffff !important;
+    }
+
+    .fi-sidebar-item-active .fi-sidebar-item-button .fi-badge {
+        background-color: rgba(255, 255, 255, 0.22) !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    .fi-sidebar-item-active .fi-sidebar-item-button .fi-badge span {
         color: #ffffff !important;
     }
 
@@ -89,15 +100,18 @@
     }
 
     /* Cards, Widgets & Containers */
-    .fi-section, .fi-ta-ctn, .fi-widget {
+    .fi-section, .fi-ta-ctn, .fi-wi-stats-overview-stat {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 16px !important;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02) !important;
+    }
+
+    .fi-ta-ctn {
         overflow: hidden;
     }
 
-    /* Table Fix - Eliminate unnecessary horizontal overflow on standard screens */
+    /* Table Styling */
     .fi-ta-table {
         table-layout: auto !important;
         width: 100% !important;
@@ -128,90 +142,131 @@
         background-color: #f8f7ff !important;
     }
 
-    /* Buttons - Universal Filament v3 Button Styling */
-    .fi-header .fi-ac a.fi-btn,
-    .fi-header .fi-ac button.fi-btn,
-    .fi-header a.fi-btn,
-    .fi-header button.fi-btn,
+    /* ========================================================
+       Semantic Button System (Primary, Danger, Success, Warning, Gray)
+       ======================================================== */
+    .fi-btn {
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        transition: all 0.18s ease !important;
+    }
+
+    /* Primary Brand Purple Buttons (+ New Property, Save Changes, Login) */
     a.fi-btn[href*="/create"],
-    button[type="submit"].fi-btn,
-    .fi-btn-primary,
     .fi-btn.fi-color-primary,
-    .fi-btn.fi-color-custom,
-    a.fi-btn.fi-color-primary,
-    button.fi-btn.fi-color-primary,
-    .fi-ac-action.fi-color-primary,
-    .fi-header-actions .fi-btn {
+    .fi-btn-color-primary,
+    button[type="submit"].fi-btn.fi-color-primary {
         background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
         background-color: #6d28d9 !important;
         border: 1px solid #5b21b6 !important;
-        border-radius: 10px !important;
         color: #ffffff !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 12px rgba(109, 40, 217, 0.35) !important;
-        transition: all 0.2s ease !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        text-decoration: none !important;
+        box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3) !important;
     }
 
-    .fi-header .fi-ac a.fi-btn *,
-    .fi-header .fi-ac button.fi-btn *,
-    .fi-header a.fi-btn *,
-    .fi-header button.fi-btn *,
-    a.fi-btn[href*="/create"] *,
-    button[type="submit"].fi-btn *,
-    .fi-btn-primary span,
-    .fi-btn.fi-color-primary span,
-    .fi-btn.fi-color-custom span,
-    a.fi-btn.fi-color-primary span,
-    button.fi-btn.fi-color-primary span,
-    .fi-header-actions .fi-btn span,
-    .fi-btn-primary svg,
+    a.fi-btn[href*="/create"] .fi-btn-label,
+    a.fi-btn[href*="/create"] svg,
+    .fi-btn.fi-color-primary .fi-btn-label,
     .fi-btn.fi-color-primary svg,
-    .fi-btn.fi-color-custom svg,
-    a.fi-btn.fi-color-primary svg,
-    button.fi-btn.fi-color-primary svg,
-    .fi-header-actions .fi-btn svg,
-    .fi-btn-label {
+    .fi-btn-color-primary .fi-btn-label,
+    .fi-btn-color-primary svg {
         color: #ffffff !important;
-        fill: #ffffff !important;
-        opacity: 1 !important;
-        visibility: visible !important;
     }
 
-    .fi-header .fi-ac a.fi-btn:hover,
-    .fi-header .fi-ac button.fi-btn:hover,
-    .fi-header a.fi-btn:hover,
-    .fi-header button.fi-btn:hover,
     a.fi-btn[href*="/create"]:hover,
-    button[type="submit"].fi-btn:hover,
-    .fi-btn-primary:hover,
     .fi-btn.fi-color-primary:hover,
-    .fi-btn.fi-color-custom:hover,
-    a.fi-btn.fi-color-primary:hover,
-    button.fi-btn.fi-color-primary:hover,
-    .fi-header-actions .fi-btn:hover {
+    .fi-btn-color-primary:hover {
         background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
-        background-color: #5b21b6 !important;
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(109, 40, 217, 0.45) !important;
+        box-shadow: 0 6px 16px rgba(109, 40, 217, 0.42) !important;
     }
 
-    /* Inputs & Form Fields */
-    .fi-input, .fi-select-input {
-        background-color: #fcfcfd !important;
+    /* Danger / Delete / Reject Buttons */
+    .fi-btn.fi-color-danger,
+    .fi-btn-color-danger {
+        background-color: #e11d48 !important;
+        border: 1px solid #be123c !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25) !important;
+    }
+
+    .fi-btn.fi-color-danger .fi-btn-label,
+    .fi-btn.fi-color-danger svg,
+    .fi-btn-color-danger .fi-btn-label,
+    .fi-btn-color-danger svg {
+        color: #ffffff !important;
+    }
+
+    .fi-btn.fi-color-danger:hover,
+    .fi-btn-color-danger:hover {
+        background-color: #be123c !important;
+        transform: translateY(-1px);
+    }
+
+    /* Success / Approve Buttons */
+    .fi-btn.fi-color-success,
+    .fi-btn-color-success {
+        background-color: #059669 !important;
+        border: 1px solid #047857 !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25) !important;
+    }
+
+    .fi-btn.fi-color-success .fi-btn-label,
+    .fi-btn.fi-color-success svg,
+    .fi-btn-color-success .fi-btn-label,
+    .fi-btn-color-success svg {
+        color: #ffffff !important;
+    }
+
+    .fi-btn.fi-color-success:hover,
+    .fi-btn-color-success:hover {
+        background-color: #047857 !important;
+        transform: translateY(-1px);
+    }
+
+    /* Warning / Set Code Buttons */
+    .fi-btn.fi-color-warning,
+    .fi-btn-color-warning {
+        background-color: #d97706 !important;
+        border: 1px solid #b45309 !important;
+        color: #ffffff !important;
+    }
+
+    .fi-btn.fi-color-warning .fi-btn-label,
+    .fi-btn.fi-color-warning svg,
+    .fi-btn-color-warning .fi-btn-label,
+    .fi-btn-color-warning svg {
+        color: #ffffff !important;
+    }
+
+    /* Secondary / Cancel / Gray Buttons - Always Crisp Dark Text */
+    .fi-btn.fi-color-gray,
+    button.fi-btn.fi-color-gray,
+    a.fi-btn.fi-color-gray {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
+        color: #1e293b !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    .fi-btn.fi-color-gray .fi-btn-label,
+    .fi-btn.fi-color-gray svg {
+        color: #1e293b !important;
+    }
+
+    .fi-btn.fi-color-gray:hover {
+        background-color: #f8fafc !important;
+        border-color: #94a3b8 !important;
+    }
+
+    /* Input Wrappers (No Double-Border on Prefixed / Password / Search Inputs) */
+    .fi-input-wrp {
         border-radius: 10px !important;
-        font-size: 0.925rem !important;
-        padding: 0.6rem 0.85rem !important;
         transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
     }
 
-    .fi-input:focus, .fi-select-input:focus {
-        border-color: #7c3aed !important;
+    .fi-input-wrp:focus-within {
         box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
     }
 
@@ -236,7 +291,7 @@
         font-size: 0.75rem !important;
     }
 
-    /* Custom Responsive tweaks */
+    /* Responsive Tweaks */
     @media (max-width: 768px) {
         .fi-sidebar {
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;

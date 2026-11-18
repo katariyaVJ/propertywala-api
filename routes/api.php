@@ -55,12 +55,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [PropertyController::class, 'index']);
         Route::get('/by-code/{code}', [PropertyController::class, 'getByCode']);
         Route::get('/{id}', [PropertyController::class, 'show'])->whereNumber('id');
+        Route::post('/', [PropertyController::class, 'store']); // Allow app user submission (sanctum or phone identified)
+        Route::get('/my/listings', [PropertyController::class, 'myListings']);
+        Route::get('/my-properties', [PropertyController::class, 'myListings']);
 
         Route::middleware('auth:sanctum')->group(function () {
-            Route::post('/', [PropertyController::class, 'store']);
             Route::post('/upload-image', [PropertyController::class, 'uploadImage']);
-            Route::get('/my/listings', [PropertyController::class, 'myListings']);
-            Route::get('/my-properties', [PropertyController::class, 'myListings']);
             Route::delete('/{id}', [PropertyController::class, 'destroy'])->whereNumber('id');
             Route::post('/{id}/save', [SavedPropertyController::class, 'toggle'])->whereNumber('id');
         });
@@ -109,11 +109,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/professionals/{category}', [ServiceController::class, 'professionals']);
         Route::post('/request-callback', [ServiceController::class, 'requestCallback']);
         Route::post('/inquire', [ServiceController::class, 'requestCallback']);
-
-        Route::middleware('auth:sanctum')->group(function () {
-            Route::post('/register', [ServiceController::class, 'register']);
-            Route::get('/my-requests', [ServiceController::class, 'myRequests']);
-        });
+        Route::post('/register', [ServiceController::class, 'register']);
+        Route::get('/my-requests', [ServiceController::class, 'myRequests']);
     });
 
     // 9. Notifications Module

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceInquiry;
 use App\Models\ServiceProfessional;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class ServiceController extends Controller
 {
@@ -54,7 +56,22 @@ class ServiceController extends Controller
             'license_or_reg_number' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $user = $request->user();
+        $user = $request->user('sanctum');
+        $phone = $validated['phone'];
+
+        if (!$user) {
+            $user = User::firstOrCreate(
+                ['phone' => $phone],
+                [
+                    'name' => $validated['name'],
+                    'email' => $validated['email'] ?? ('pro_' . substr(preg_replace('/[^0-9]/', '', $phone), -6) . '@propertywala.app'),
+                    'password' => Hash::make('secret123'),
+                    'role' => 'agent',
+                    'city' => $validated['city'],
+                    'is_phone_verified' => true,
+                ]
+            );
+        }
 
         $professional = ServiceProfessional::create([
             'user_id' => $user->id,
@@ -63,7 +80,7 @@ class ServiceController extends Controller
             'firm_name' => $validated['firm_name'] ?? $validated['firmName'] ?? $validated['name'],
             'experience_years' => $validated['experience_years'] ?? $validated['experienceYears'] ?? 3,
             'experience_display' => ($validated['experience_years'] ?? $validated['experienceYears'] ?? 3) . '+ Years Experience',
-            'phone' => $validated['phone'],
+            'phone' => $phone,
             'email' => $validated['email'] ?? $user->email,
             'city' => $validated['city'],
             'specializations' => $validated['specializations'] ?? [],
@@ -84,8 +101,21 @@ class ServiceController extends Controller
      */
     public function myRequests(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $requests = ServiceProfessional::where('user_id', $user->id)->latest()->get();
+        $user = $request->user('sanctum');
+        $phone = $request->query('phone') ?? $request->query('mobile');
+
+        $query = ServiceProfessional::latest();
+
+        if ($user) {
+            $query->where('user_id', $user->id);
+        } elseif ($phone) {
+            $clean = preg_replace('/[^0-9]/', '', $phone);
+            $query->where('phone', 'LIKE', "%{$clean}%");
+        } else {
+            return $this->successResponse([], 'Service registration requests retrieved successfully');
+        }
+
+        $requests = $query->get();
 
         return $this->successResponse($requests, 'Service registration requests retrieved successfully');
     }
