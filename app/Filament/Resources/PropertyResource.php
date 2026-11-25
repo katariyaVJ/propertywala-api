@@ -80,7 +80,9 @@ class PropertyResource extends Resource
                                     'Owner' => 'Owner',
                                     'Employee' => 'Employee (Staff ID)',
                                 ])
-                                ->default('Owner')
+                                ->default(fn () => auth()->user()?->isEmployee() ? 'Employee' : 'Owner')
+                                ->disabled(fn () => auth()->user()?->isEmployee())
+                                ->dehydrated()
                                 ->required(),
                         ]),
 
@@ -917,14 +919,20 @@ class PropertyResource extends Resource
                                     'Sold / Rented' => 'Sold / Rented',
                                     'Rejected' => 'Rejected',
                                 ])
-                                ->default('Active')
+                                ->default(fn () => (auth()->user()?->isEmployee() && !auth()->user()?->hasAdminPermission('properties.approve_reject')) ? 'Under Review' : 'Active')
+                                ->disabled(fn () => auth()->user()?->isEmployee() && !auth()->user()?->hasAdminPermission('properties.approve_reject'))
+                                ->dehydrated()
                                 ->live()
                                 ->required(),
                             Forms\Components\Toggle::make('is_verified')
                                 ->label('Verified Badge')
-                                ->default(true),
+                                ->default(fn () => auth()->user()?->isOwner() || auth()->user()?->hasAdminPermission('properties.approve_reject'))
+                                ->disabled(fn () => auth()->user()?->isEmployee() && !auth()->user()?->hasAdminPermission('properties.approve_reject'))
+                                ->dehydrated(),
                             Forms\Components\Toggle::make('is_featured')
                                 ->label('Featured (Top of Feed)')
+                                ->disabled(fn () => auth()->user()?->isEmployee())
+                                ->dehydrated()
                                 ->live()
                                 ->default(false),
                         ]),
@@ -1023,9 +1031,13 @@ class PropertyResource extends Resource
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Added By')
                     ->badge()
-                    ->color('info')
+                    ->color(fn (Property $record): string => match (true) {
+                        $record->creator?->isEmployee() => 'info',
+                        $record->creator?->isOwner() => 'success',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn ($state, Property $record): string => ($record->creator?->employee_code ? '[' . $record->creator->employee_code . '] ' : '') . ($state ?: 'Self / App'))
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -1043,6 +1055,10 @@ class PropertyResource extends Resource
                 Tables\Filters\Filter::make('added_today')
                     ->label('Added Today')
                     ->query(fn ($query) => $query->whereDate('created_at', \Carbon\Carbon::today())),
+                Tables\Filters\Filter::make('my_entries')
+                    ->label('My Entries Only')
+                    ->query(fn ($query) => $query->where('created_by_user_id', auth()->id()))
+                    ->visible(fn () => auth()->user()?->isEmployee()),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'Active' => 'Active',

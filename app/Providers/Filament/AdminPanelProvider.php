@@ -55,20 +55,14 @@ class AdminPanelProvider extends PanelProvider
                 'Real Estate & Bank Auctions',
                 'User & Lead Management',
                 'Services & Expert Directory',
-                'Subscriptions & Revenue',
-                'Locations & Settings',
-                'Moderation & Safety',
             ])
             ->resources([
                 \App\Filament\Resources\PropertyResource::class,
                 \App\Filament\Resources\NewProjectResource::class,
+                \App\Filament\Resources\CityResource::class,
                 \App\Filament\Resources\BuyerLeadResource::class,
                 \App\Filament\Resources\UserResource::class,
                 \App\Filament\Resources\ServiceProfessionalResource::class,
-                \App\Filament\Resources\ProMembershipResource::class,
-                \App\Filament\Resources\CityResource::class,
-                \App\Filament\Resources\PropertyReportResource::class,
-                \App\Filament\Resources\AppFeedbackReviewResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,

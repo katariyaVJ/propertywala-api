@@ -19,6 +19,11 @@ class CreateProperty extends CreateRecord
         // Track employee/admin creator
         $data['created_by_user_id'] = auth()->id();
 
+        // Enforce employee role when staff creates record
+        if (auth()->user()?->isEmployee()) {
+            $data['posted_by_role'] = 'Employee';
+        }
+
         // Map custom category if 'Other' was selected
         if (($data['property_sub_type'] ?? '') === 'Other' && !empty($data['custom_category'])) {
             $data['property_sub_type'] = trim($data['custom_category']);

@@ -20,24 +20,31 @@ class ProMembershipResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('subscriptions.view') ?? false);
+        return false;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return false;
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('subscriptions.view') ?? false);
+        return false;
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canDelete($record): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function form(Form $form): Form

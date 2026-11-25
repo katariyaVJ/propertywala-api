@@ -75,8 +75,12 @@
 
     .fi-sidebar-header {
         border-bottom: 1px solid #f1f5f9 !important;
-        padding: 1rem 1.15rem !important;
+        padding: 0.85rem 1rem !important;
         background-color: #ffffff !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
     }
 
     .fi-sidebar-group-label {

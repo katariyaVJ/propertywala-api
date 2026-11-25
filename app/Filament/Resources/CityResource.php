@@ -16,9 +16,9 @@ class CityResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
 
-    protected static ?string $navigationGroup = 'Locations & Settings';
+    protected static ?string $navigationGroup = 'Real Estate & Bank Auctions';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function shouldRegisterNavigation(): bool
     {

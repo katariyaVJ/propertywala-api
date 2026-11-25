@@ -20,14 +20,16 @@ class AppFeedbackReviewResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canCreate(): bool
@@ -42,7 +44,7 @@ class AppFeedbackReviewResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function form(Form $form): Form

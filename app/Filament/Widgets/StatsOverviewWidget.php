@@ -24,10 +24,14 @@ class StatsOverviewWidget extends BaseWidget
         $bankAuctionCount = Property::where('is_bank_auction', true)->where('is_deleted', false)->count();
         $totalLeads = BuyerLead::count();
 
-        // Staff productivity today (visible to owner/admins)
-        $todayStaffProperties = Property::whereDate('created_at', \Carbon\Carbon::today())
-            ->whereNotNull('created_by_user_id')
-            ->count();
+        // Staff productivity today (adapts: staff sees own entries, owner sees all staff entries)
+        $isEmployee = auth()->user()?->isEmployee() ?? false;
+        $todayStaffProperties = $isEmployee
+            ? Property::whereDate('created_at', \Carbon\Carbon::today())->where('created_by_user_id', auth()->id())->count()
+            : Property::whereDate('created_at', \Carbon\Carbon::today())->whereNotNull('created_by_user_id')->count();
+
+        $staffCardTitle = $isEmployee ? 'My Entries Today' : 'Today Staff Entries';
+        $staffCardDesc = $isEmployee ? 'Properties added by you today' : 'Attributed to employee logins';
 
         return [
             Stat::make('Total Portfolio', number_format($totalProperties))
@@ -48,8 +52,8 @@ class StatsOverviewWidget extends BaseWidget
                 ->color('warning')
                 ->chart([2, 5, 8, 14, 20, 26, $bankAuctionCount ?: 28]),
 
-            Stat::make('Today Staff Entries', number_format($todayStaffProperties))
-                ->description('Attributed to employee login')
+            Stat::make($staffCardTitle, number_format($todayStaffProperties))
+                ->description($staffCardDesc)
                 ->descriptionIcon('heroicon-m-user-plus')
                 ->color('info')
                 ->chart([1, 3, 6, 9, 13, 18, $todayStaffProperties ?: 5]),

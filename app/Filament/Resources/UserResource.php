@@ -116,7 +116,6 @@ class UserResource extends Resource
                             'new_projects.manage' => 'Manage Builder New Projects',
                             'leads.view_manage' => 'View & Manage Buyer Leads',
                             'experts.manage' => 'Manage Service Professionals',
-                            'subscriptions.view' => 'View Subscriptions & Revenue',
                             'users.manage' => 'Manage Users & Customers',
                         ])
                         ->columns(2)
