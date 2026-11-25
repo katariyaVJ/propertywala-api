@@ -20,25 +20,137 @@ class NewProjectResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('new_projects.manage') ?? false);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('new_projects.manage') ?? false);
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('new_projects.manage') ?? false);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('new_projects.manage') ?? false);
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(160),
-            Forms\Components\TextInput::make('developer_name')->required()->maxLength(140),
-            Forms\Components\TextInput::make('developer_stats')->maxLength(100),
-            Forms\Components\TextInput::make('rera_number')->required()->unique(ignoreRecord: true)->maxLength(80),
-            Forms\Components\TextInput::make('locality')->required()->maxLength(160),
-            Forms\Components\TextInput::make('city')->default('Surat')->required(),
-            Forms\Components\TextInput::make('price_range')->placeholder('₹ 1.25 Cr - 2.80 Cr')->required(),
-            Forms\Components\TextInput::make('bhk_options')->placeholder('3, 4 & 5 BHK')->required(),
-            Forms\Components\TextInput::make('possession')->placeholder('Dec 2027')->required(),
-            Forms\Components\TextInput::make('construction_stage')->placeholder('Under Construction (7th Slab)'),
-            Forms\Components\TextInput::make('total_units')->placeholder('160 Units across 4 Towers'),
-            Forms\Components\TextInput::make('brochure_url')->url()->maxLength(500),
-            Forms\Components\Toggle::make('is_featured')->default(true),
-            Forms\Components\TagsInput::make('tags')->placeholder('RERA Approved, Luxury Enclave'),
-            Forms\Components\TagsInput::make('amenities')->placeholder('Infinity Pool, Gymnasium'),
-            Forms\Components\Textarea::make('description')->columnSpanFull(),
+            Forms\Components\Section::make('Project Identity & Developer')
+                ->description('Official RERA registration and developer branding')
+                ->icon('heroicon-o-building-office')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Project Title')
+                            ->placeholder('e.g. Avadh Copper Stone')
+                            ->required()
+                            ->maxLength(160),
+                        Forms\Components\TextInput::make('developer_name')
+                            ->label('Developer / Builder')
+                            ->placeholder('e.g. Avadh Group')
+                            ->required()
+                            ->maxLength(140),
+                        Forms\Components\TextInput::make('rera_number')
+                            ->label('RERA Registration Number')
+                            ->placeholder('PR/GJ/SURAT/...')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(80),
+                        Forms\Components\TextInput::make('developer_stats')
+                            ->label('Developer Track Record')
+                            ->placeholder('e.g. 25+ Delivered Projects • 18 Yrs Experience')
+                            ->maxLength(100),
+                    ]),
+                ]),
+
+            Forms\Components\Section::make('Location & Geography')
+                ->icon('heroicon-o-map-pin')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])->schema([
+                        Forms\Components\TextInput::make('locality')
+                            ->label('Locality / Area')
+                            ->placeholder('e.g. VIP Road, Vesu')
+                            ->required()
+                            ->maxLength(160),
+                        Forms\Components\TextInput::make('city')
+                            ->label('City')
+                            ->default('Surat')
+                            ->required(),
+                        Forms\Components\Select::make('state')
+                            ->label('State')
+                            ->options([
+                                'Gujarat' => 'Gujarat',
+                                'Maharashtra' => 'Maharashtra',
+                                'Rajasthan' => 'Rajasthan',
+                                'Madhya Pradesh' => 'Madhya Pradesh',
+                                'Delhi NCR' => 'Delhi NCR',
+                                'Karnataka' => 'Karnataka',
+                                'Tamil Nadu' => 'Tamil Nadu',
+                                'Uttar Pradesh' => 'Uttar Pradesh',
+                                'Other' => 'Other State',
+                            ])
+                            ->default('Gujarat')
+                            ->searchable(),
+                    ]),
+                ]),
+
+            Forms\Components\Section::make('Pricing, Configuration & Timeline')
+                ->icon('heroicon-o-currency-rupee')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'sm' => 2, 'lg' => 3])->schema([
+                        Forms\Components\TextInput::make('price_range')
+                            ->label('Price Range')
+                            ->placeholder('e.g. ₹ 1.25 Cr - 2.80 Cr')
+                            ->required(),
+                        Forms\Components\TextInput::make('bhk_options')
+                            ->label('BHK Configurations')
+                            ->placeholder('e.g. 3, 4 & 5 BHK')
+                            ->required(),
+                        Forms\Components\TextInput::make('possession')
+                            ->label('Possession Date')
+                            ->placeholder('e.g. Dec 2027')
+                            ->required(),
+                        Forms\Components\TextInput::make('construction_stage')
+                            ->label('Construction Stage')
+                            ->placeholder('e.g. Under Construction (7th Slab)'),
+                        Forms\Components\TextInput::make('total_units')
+                            ->label('Total Inventory Units')
+                            ->placeholder('e.g. 160 Units across 4 Towers'),
+                        Forms\Components\Toggle::make('is_featured')
+                            ->label('Mark as Featured Project')
+                            ->default(true),
+                    ]),
+                ]),
+
+            Forms\Components\Section::make('Brochure, Amenities & Overview')
+                ->icon('heroicon-o-document-text')
+                ->schema([
+                    Forms\Components\TextInput::make('brochure_url')
+                        ->label('Project Brochure URL (PDF)')
+                        ->url()
+                        ->placeholder('https://...')
+                        ->maxLength(500),
+                    Forms\Components\TagsInput::make('tags')
+                        ->label('Highlights & Badges')
+                        ->placeholder('Add highlight (e.g. RERA Approved, High ROI, River Facing)')
+                        ->suggestions(['RERA Approved', 'Ultra Luxury', 'River Facing', 'Clubhouse', 'Prime Location']),
+                    Forms\Components\TagsInput::make('amenities')
+                        ->label('Project Amenities')
+                        ->placeholder('Add amenity (e.g. Infinity Pool, Banquet, Gymnasium)')
+                        ->suggestions(['Infinity Pool', 'Gymnasium', 'Landscaped Garden', 'Club House', 'EV Charging Station']),
+                    Forms\Components\Textarea::make('description')
+                        ->label('Project Description')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
@@ -54,8 +166,8 @@ class NewProjectResource extends Resource
                     ->wrap(),
                 Tables\Columns\TextColumn::make('locality')
                     ->label('Location')
-                    ->description(fn (NewProject $record): string => $record->city)
-                    ->searchable(['locality', 'city']),
+                    ->description(fn (NewProject $record): string => ($record->city ?? '') . ($record->state ? ', ' . $record->state : ''))
+                    ->searchable(['locality', 'city', 'state']),
                 Tables\Columns\TextColumn::make('price_range')
                     ->label('Price Range')
                     ->description(fn (NewProject $record): ?string => $record->bhk_options),

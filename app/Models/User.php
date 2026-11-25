@@ -24,8 +24,43 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array(strtolower((string) $this->role), ['admin', 'superadmin', 'super_admin'], true)
-            && ! $this->is_blocked;
+        if ($this->is_blocked) {
+            return false;
+        }
+
+        $role = strtolower((string) $this->role);
+
+        // Owner / Administrator has full panel access
+        if (in_array($role, ['admin', 'superadmin', 'super_admin', 'owner'], true)) {
+            return true;
+        }
+
+        // Employee can access panel if designated as Employee
+        if ($role === 'employee') {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function isOwner(): bool
+    {
+        return in_array(strtolower((string) $this->role), ['admin', 'superadmin', 'super_admin', 'owner'], true);
+    }
+
+    public function isEmployee(): bool
+    {
+        return strtolower((string) $this->role) === 'employee';
+    }
+
+    public function hasAdminPermission(string $permission): bool
+    {
+        if ($this->isOwner()) {
+            return true;
+        }
+
+        $permissions = (array) ($this->admin_permissions ?? []);
+        return in_array($permission, $permissions, true);
     }
 
     protected function casts(): array
@@ -38,6 +73,7 @@ class User extends Authenticatable implements FilamentUser
             'is_phone_verified' => 'boolean',
             'is_blocked' => 'boolean',
             'is_deleted' => 'boolean',
+            'admin_permissions' => 'array',
             'password' => 'hashed',
         ];
     }

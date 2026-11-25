@@ -21,6 +21,26 @@ class ServiceProfessionalResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('experts.manage') ?? false);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('experts.manage') ?? false);
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('experts.manage') ?? false);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $pending = static::getModel()::where('status', 'Pending')->count();

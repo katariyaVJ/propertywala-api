@@ -11,6 +11,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\MaxWidth;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -31,6 +32,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Propertywala')
+            ->brandLogo(fn () => view('filament.brand-logo'))
+            ->brandLogoHeight('2.25rem')
+            ->font('Plus Jakarta Sans')
+            ->maxContentWidth(MaxWidth::ScreenTwoExtraLarge)
+            ->sidebarWidth('16rem')
             ->darkMode(false)
             ->colors([
                 'primary' => Color::hex('#6D28D9'), // App Brand Imperial Purple / Indigo
@@ -49,6 +55,9 @@ class AdminPanelProvider extends PanelProvider
                 'Real Estate & Bank Auctions',
                 'User & Lead Management',
                 'Services & Expert Directory',
+                'Subscriptions & Revenue',
+                'Locations & Settings',
+                'Moderation & Safety',
             ])
             ->resources([
                 \App\Filament\Resources\PropertyResource::class,
@@ -56,6 +65,10 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\BuyerLeadResource::class,
                 \App\Filament\Resources\UserResource::class,
                 \App\Filament\Resources\ServiceProfessionalResource::class,
+                \App\Filament\Resources\ProMembershipResource::class,
+                \App\Filament\Resources\CityResource::class,
+                \App\Filament\Resources\PropertyReportResource::class,
+                \App\Filament\Resources\AppFeedbackReviewResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,

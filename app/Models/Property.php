@@ -23,14 +23,14 @@ class Property extends Model
             'emd_amount' => 'decimal:2',
             'area_value' => 'decimal:2',
             'super_area_value' => 'decimal:2',
-            'latitude' => 'decimal:7',
-            'longitude' => 'decimal:7',
             'is_negotiable' => 'boolean',
             'is_bank_auction' => 'boolean',
             'is_verified' => 'boolean',
             'is_featured' => 'boolean',
             'is_deleted' => 'boolean',
             'auction_timestamp' => 'datetime',
+            'sold_date' => 'date',
+            'featured_until' => 'date',
             'amenities' => 'array',
             'vehicle_inspection_features' => 'array',
         ];
@@ -39,6 +39,16 @@ class Property extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_user_id');
     }
 
     public function images(): HasMany

@@ -14,16 +14,20 @@ class AppFeedbackReviewResource extends Resource
 {
     protected static ?string $model = AppFeedbackReview::class;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationIcon = 'heroicon-o-star';
+
+    protected static ?string $navigationGroup = 'Moderation & Safety';
+
+    protected static ?int $navigationSort = 2;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canViewAny(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canCreate(): bool
@@ -38,7 +42,7 @@ class AppFeedbackReviewResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function form(Form $form): Form

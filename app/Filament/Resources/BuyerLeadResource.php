@@ -20,6 +20,26 @@ class BuyerLeadResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('leads.view_manage') ?? false);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('leads.view_manage') ?? false);
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('leads.view_manage') ?? false);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->isOwner(); // Deleting leads restricted to Owner
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $newLeads = static::getModel()::where('status', 'New')->count();
@@ -101,6 +121,32 @@ class BuyerLeadResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('markContacted')
+                        ->label('Mark as Contacted')
+                        ->icon('heroicon-o-phone-arrow-up-right')
+                        ->color('warning')
+                        ->visible(fn (BuyerLead $r) => $r->status === 'New')
+                        ->action(function (BuyerLead $record) {
+                            $record->update(['status' => 'Contacted']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Lead Contacted')
+                                ->body("Lead #{$record->id} marked as contacted.")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\Action::make('markClosed')
+                        ->label('Mark Deal Closed')
+                        ->icon('heroicon-o-check-badge')
+                        ->color('success')
+                        ->visible(fn (BuyerLead $r) => in_array($r->status, ['New', 'Contacted']))
+                        ->action(function (BuyerLead $record) {
+                            $record->update(['status' => 'Closed']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Lead Closed')
+                                ->body("Lead #{$record->id} marked as closed deal.")
+                                ->success()
+                                ->send();
+                        }),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
                 ]),

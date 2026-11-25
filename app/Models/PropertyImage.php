@@ -12,19 +12,32 @@ class PropertyImage extends Model
 
     protected $guarded = ['id'];
 
+    public const DEFAULT_PLACEHOLDER = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+
     protected static function booted(): void
     {
         static::saving(function (PropertyImage $image) {
-            // Guard against null/empty image_url to prevent DB constraint violation
-            if (empty($image->image_url)) {
+            $raw = $image->attributes['image_url'] ?? null;
+            if (blank($raw)) {
                 $original = $image->getRawOriginal('image_url');
-                if (!empty($original)) {
-                    $image->image_url = $original;
-                } else {
-                    $image->image_url = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
-                }
+                $image->attributes['image_url'] = !blank($original) ? $original : self::DEFAULT_PLACEHOLDER;
+            }
+
+            if (blank($image->attributes['thumbnail_url'] ?? null)) {
+                $image->attributes['thumbnail_url'] = $image->attributes['image_url'];
+            }
+
+            if (blank($image->attributes['label'] ?? null)) {
+                $image->attributes['label'] = 'Property Photo';
             }
         });
+    }
+
+    public function setImageUrlAttribute($value): void
+    {
+        $this->attributes['image_url'] = blank($value)
+            ? (!blank($this->getRawOriginal('image_url')) ? $this->getRawOriginal('image_url') : self::DEFAULT_PLACEHOLDER)
+            : $value;
     }
 
     protected function casts(): array
@@ -44,7 +57,7 @@ class PropertyImage extends Model
     public function getImageUrlAttribute($value): string
     {
         if (empty($value)) {
-            return '';
+            return self::DEFAULT_PLACEHOLDER;
         }
         if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
             return $value;
@@ -52,4 +65,3 @@ class PropertyImage extends Model
         return asset('storage/' . ltrim($value, '/'));
     }
 }
-

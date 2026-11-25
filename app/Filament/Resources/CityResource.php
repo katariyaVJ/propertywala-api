@@ -16,9 +16,29 @@ class CityResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
 
-    protected static ?string $navigationGroup = 'Locations & Master Data';
+    protected static ?string $navigationGroup = 'Locations & Settings';
 
     protected static ?int $navigationSort = 1;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->isOwner();
+    }
 
     public static function form(Form $form): Form
     {

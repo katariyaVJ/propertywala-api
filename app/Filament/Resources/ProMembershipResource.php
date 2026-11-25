@@ -20,6 +20,26 @@ class ProMembershipResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('subscriptions.view') ?? false);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('subscriptions.view') ?? false);
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->isOwner();
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -66,6 +86,33 @@ class ProMembershipResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options([
                     'Active' => 'Active',
                     'Expired' => 'Expired',
+                ]),
+            ])
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('extend30Days')
+                        ->label('+30 Days Extension')
+                        ->icon('heroicon-o-clock')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(fn (ProMembership $r) => auth()->user()?->isOwner())
+                        ->action(function (ProMembership $record) {
+                            $baseDate = $record->valid_until && \Carbon\Carbon::parse($record->valid_until)->isFuture()
+                                ? \Carbon\Carbon::parse($record->valid_until)
+                                : \Carbon\Carbon::now();
+                            $newDate = $baseDate->addDays(30);
+                            $record->update([
+                                'valid_until' => $newDate,
+                                'status' => 'Active',
+                            ]);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Membership Extended')
+                                ->body("{$record->plan_name} extended for 30 days until {$newDate->format('d M Y')}.")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
                 ]),
             ]);
     }
