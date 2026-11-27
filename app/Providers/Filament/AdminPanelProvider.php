@@ -53,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 'Real Estate & Bank Auctions',
-                'User & Lead Management',
+                'Staff & Lead Management',
                 'Services & Expert Directory',
             ])
             ->resources([
@@ -61,7 +61,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Resources\NewProjectResource::class,
                 \App\Filament\Resources\CityResource::class,
                 \App\Filament\Resources\BuyerLeadResource::class,
-                \App\Filament\Resources\UserResource::class,
+                \App\Filament\Resources\EmployeeResource::class,
                 \App\Filament\Resources\ServiceProfessionalResource::class,
             ])
             ->pages([

@@ -150,46 +150,53 @@ class ServiceProfessionalResource extends Resource
                 ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('Accept')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->button()
+                    ->requiresConfirmation()
+                    ->modalHeading('Accept & Approve Professional')
+                    ->modalDescription(fn (ServiceProfessional $record) => "Are you sure you want to approve {$record->name} ({$record->firm_name})? They will immediately be live in the app.")
+                    ->action(function (ServiceProfessional $record) {
+                        $record->update([
+                            'status' => 'Approved',
+                            'rejection_reason' => null,
+                        ]);
+                        Notification::make()
+                            ->title('Professional Approved')
+                            ->body("{$record->name} is now live in the mobile app directory.")
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved'),
+                Tables\Actions\Action::make('reject')
+                    ->label('Reject')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->button()
+                    ->form([
+                        Forms\Components\Textarea::make('rejection_reason')
+                            ->label('Reason for Rejection')
+                            ->placeholder('e.g. License verification unconfirmed, or unable to reach mobile number.')
+                            ->required(),
+                    ])
+                    ->action(function (ServiceProfessional $record, array $data) {
+                        $record->update([
+                            'status' => 'Rejected',
+                            'rejection_reason' => $data['rejection_reason'],
+                        ]);
+                        Notification::make()
+                            ->title('Application Rejected')
+                            ->body("{$record->name} has been rejected with reason.")
+                            ->danger()
+                            ->send();
+                    })
+                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Rejected'),
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('approve')
-                        ->label('Approve')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->action(function (ServiceProfessional $record) {
-                            $record->update([
-                                'status' => 'Approved',
-                                'rejection_reason' => null,
-                            ]);
-                            Notification::make()
-                                ->title('Professional Approved')
-                                ->body("{$record->name} is now live in the app directory.")
-                                ->success()
-                                ->send();
-                        })
-                        ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved'),
-                    Tables\Actions\Action::make('reject')
-                        ->label('Reject Application')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->form([
-                            Forms\Components\Textarea::make('rejection_reason')
-                                ->label('Reason for Rejection')
-                                ->placeholder('e.g. License verification unconfirmed, or unable to reach mobile number.')
-                                ->required(),
-                        ])
-                        ->action(function (ServiceProfessional $record, array $data) {
-                            $record->update([
-                                'status' => 'Rejected',
-                                'rejection_reason' => $data['rejection_reason'],
-                            ]);
-                            Notification::make()
-                                ->title('Application Rejected')
-                                ->body("{$record->name} has been rejected with reason.")
-                                ->danger()
-                                ->send();
-                        })
-                        ->visible(fn (ServiceProfessional $record) => $record->status !== 'Rejected'),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn () => auth()->user()?->isOwner() ?? false),
                 ]),
             ]);
     }

@@ -1,22 +1,21 @@
 <?php
 
-namespace App\Filament\Resources\UserResource\Pages;
+namespace App\Filament\Resources\EmployeeResource\Pages;
 
-use App\Filament\Resources\UserResource;
+use App\Filament\Resources\EmployeeResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListUsers extends ListRecords
+class ListEmployees extends ListRecords
 {
-    protected static string $resource = UserResource::class;
+    protected static string $resource = EmployeeResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\CreateAction::make()
-                ->label('New User')
+                ->label('Add New Employee')
                 ->icon('heroicon-m-user-plus'),
         ];
     }
 }
-

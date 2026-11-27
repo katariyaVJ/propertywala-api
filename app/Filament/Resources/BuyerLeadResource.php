@@ -16,7 +16,7 @@ class BuyerLeadResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
-    protected static ?string $navigationGroup = 'User & Lead Management';
+    protected static ?string $navigationGroup = 'Staff & Lead Management';
 
     protected static ?int $navigationSort = 2;
 
