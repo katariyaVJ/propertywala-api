@@ -169,7 +169,7 @@ class ServiceProfessionalResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved'),
+                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Approved' && (auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('experts.manage') ?? false))),
                 Tables\Actions\Action::make('reject')
                     ->label('Reject')
                     ->icon('heroicon-o-x-circle')
@@ -192,7 +192,7 @@ class ServiceProfessionalResource extends Resource
                             ->danger()
                             ->send();
                     })
-                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Rejected'),
+                    ->visible(fn (ServiceProfessional $record) => $record->status !== 'Rejected' && (auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('experts.manage') ?? false))),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()

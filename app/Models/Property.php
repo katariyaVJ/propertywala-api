@@ -21,6 +21,7 @@ class Property extends Model
             'price' => 'decimal:2',
             'reserve_price' => 'decimal:2',
             'emd_amount' => 'decimal:2',
+            'security_deposit' => 'decimal:2',
             'area_value' => 'decimal:2',
             'super_area_value' => 'decimal:2',
             'is_negotiable' => 'boolean',
@@ -29,6 +30,7 @@ class Property extends Model
             'is_featured' => 'boolean',
             'is_deleted' => 'boolean',
             'auction_timestamp' => 'datetime',
+            'emd_last_timestamp' => 'datetime',
             'sold_date' => 'date',
             'featured_until' => 'date',
             'amenities' => 'array',
@@ -58,7 +60,7 @@ class Property extends Model
 
     public function coverImage(): HasOne
     {
-        return $this->hasOne(PropertyImage::class)->where('is_cover', true);
+        return $this->hasOne(PropertyImage::class)->orderByRaw('is_cover DESC, sort_order ASC, id ASC');
     }
 
     public function leads(): HasMany

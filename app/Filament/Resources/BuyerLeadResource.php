@@ -27,7 +27,7 @@ class BuyerLeadResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('leads.view_manage') ?? false);
+        return false; // Leads are organically submitted by buyers via mobile app
     }
 
     public static function canEdit($record): bool
@@ -147,6 +147,20 @@ class BuyerLeadResource extends Resource
                                 ->success()
                                 ->send();
                         }),
+                    Tables\Actions\Action::make('markSpam')
+                        ->label('Mark as Spam')
+                        ->icon('heroicon-o-shield-exclamation')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->visible(fn (BuyerLead $r) => $r->status !== 'Spam')
+                        ->action(function (BuyerLead $record) {
+                            $record->update(['status' => 'Spam']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Lead Marked as Spam')
+                                ->body("Lead #{$record->id} marked as spam.")
+                                ->danger()
+                                ->send();
+                        }),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make()
                         ->visible(fn () => auth()->user()?->isOwner() ?? false),
@@ -158,6 +172,7 @@ class BuyerLeadResource extends Resource
     {
         return [
             'index' => Pages\ListBuyerLeads::route('/'),
+            'edit' => Pages\EditBuyerLead::route('/{record}/edit'),
         ];
     }
 }

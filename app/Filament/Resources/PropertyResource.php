@@ -27,22 +27,54 @@ class PropertyResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('properties.view') ?? false);
+        return auth()->user()?->isOwner()
+            || (auth()->user()?->hasAdminPermission('properties.view') ?? false)
+            || (auth()->user()?->hasAdminPermission('bank_auctions.manage') ?? false);
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('properties.create') ?? false);
+        return auth()->user()?->isOwner()
+            || (auth()->user()?->hasAdminPermission('properties.create') ?? false)
+            || (auth()->user()?->hasAdminPermission('bank_auctions.manage') ?? false);
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('properties.edit') ?? false);
+        if (auth()->user()?->isOwner()) {
+            return true;
+        }
+
+        if ($record?->is_bank_auction && (auth()->user()?->hasAdminPermission('bank_auctions.manage') ?? false)) {
+            return true;
+        }
+
+        return auth()->user()?->hasAdminPermission('properties.edit') ?? false;
     }
 
     public static function canDelete($record): bool
     {
         return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('properties.delete') ?? false);
+    }
+
+    /**
+     * Auto-generate the next sequential 3-digit Property Code (e.g. 033, 034...)
+     */
+    public static function generateNextPropertyCode(): string
+    {
+        $maxNum = 32;
+        $allCodes = Property::withTrashed()->pluck('property_code')->toArray();
+        foreach ($allCodes as $c) {
+            if (is_numeric($c) && (int) $c > $maxNum) {
+                $maxNum = (int) $c;
+            }
+        }
+        $assignedCode = str_pad((string) ($maxNum + 1), 3, '0', STR_PAD_LEFT);
+        while (Property::withTrashed()->where('property_code', $assignedCode)->exists()) {
+            $maxNum++;
+            $assignedCode = str_pad((string) ($maxNum + 1), 3, '0', STR_PAD_LEFT);
+        }
+        return $assignedCode;
     }
 
     public static function getNavigationBadge(): ?string
@@ -69,16 +101,20 @@ class PropertyResource extends Resource
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\TextInput::make('property_code')
                                 ->label('Property Code (e.g. 032)')
+                                ->default(fn () => static::generateNextPropertyCode())
                                 ->unique(ignoreRecord: true)
                                 ->placeholder('032')
                                 ->maxLength(30)
-                                ->helperText('Unique short code for instant search in app.')
+                                ->helperText('Auto-generated 3-digit code for instant search in app. Can be edited.')
                                 ->required(),
                             Forms\Components\Select::make('posted_by_role')
                                 ->label('Posted By Role')
                                 ->options([
                                     'Owner' => 'Owner',
                                     'Employee' => 'Employee (Staff ID)',
+                                    'Agent' => 'Real Estate Agent',
+                                    'Builder' => 'Builder / Developer',
+                                    'Banker' => 'Banker (Auction)',
                                 ])
                                 ->default(fn () => auth()->user()?->isEmployee() ? 'Employee' : 'Owner')
                                 ->disabled(fn () => auth()->user()?->isEmployee())
@@ -797,11 +833,15 @@ class PropertyResource extends Resource
                                 ->numeric()
                                 ->prefix('₹')
                                 ->placeholder('5000000')
+                                ->default(fn (Get $get) => $get('price'))
                                 ->required(fn (Get $get): bool => $get('is_bank_auction') || $get('intent') === 'Bank Auction')
                                 ->live(onBlur: true)
-                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
                                     if ($state && is_numeric($state)) {
                                         $set('emd_amount', round($state * 0.10));
+                                        if (blank($get('price'))) {
+                                            $set('price', $state);
+                                        }
                                     }
                                 })
                                 ->visible(fn (Get $get) => $get('is_bank_auction') || $get('intent') === 'Bank Auction'),
@@ -1036,7 +1076,15 @@ class PropertyResource extends Resource
                         $record->creator?->isOwner() => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($state, Property $record): string => ($record->creator?->employee_code ? '[' . $record->creator->employee_code . '] ' : '') . ($state ?: 'Self / App'))
+                    ->formatStateUsing(function ($state, Property $record): string {
+                        if ($record->creator) {
+                            return ($record->creator->employee_code ? '[' . $record->creator->employee_code . '] ' : '') . $record->creator->name;
+                        }
+                        if ($record->user) {
+                            return '[App] ' . $record->user->name;
+                        }
+                        return 'Self / App';
+                    })
                     ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
@@ -1044,7 +1092,10 @@ class PropertyResource extends Resource
                 Tables\Filters\SelectFilter::make('created_by_user_id')
                     ->label('Added By (Staff / Owner)')
                     ->options(function () {
-                        return \App\Models\User::whereIn('role', ['admin', 'Employee', 'owner', 'superadmin'])
+                        return \App\Models\User::where(function ($query) {
+                            $query->whereIn('role', ['admin', 'owner', 'superadmin', 'SuperAdmin', 'Admin'])
+                                  ->orWhereIn('role', ['Employee', 'employee', 'Staff', 'staff', 'Manager', 'manager', 'Telecaller', 'telecaller', 'Field Executive', 'field executive']);
+                        })
                             ->get()
                             ->mapWithKeys(fn ($user) => [
                                 $user->id => ($user->employee_code ? "[{$user->employee_code}] " : '') . $user->name . " ({$user->role})"
@@ -1057,7 +1108,7 @@ class PropertyResource extends Resource
                     ->query(fn ($query) => $query->whereDate('created_at', \Carbon\Carbon::today())),
                 Tables\Filters\Filter::make('my_entries')
                     ->label('My Entries Only')
-                    ->query(fn ($query) => $query->where('created_by_user_id', auth()->id()))
+                    ->query(fn ($query) => $query->where(fn ($q) => $q->where('created_by_user_id', auth()->id())->orWhere('user_id', auth()->id())))
                     ->visible(fn () => auth()->user()?->isEmployee()),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
@@ -1113,6 +1164,7 @@ class PropertyResource extends Resource
                             $record->update([
                                 'status' => 'Active',
                                 'is_verified' => true,
+                                'admin_review_note' => null,
                                 'reviewed_by_user_id' => auth()->id(),
                             ]);
                             Notification::make()
@@ -1172,6 +1224,7 @@ class PropertyResource extends Resource
                             Forms\Components\TextInput::make('property_code')
                                 ->label('Assign 3-digit Code (e.g. 032)')
                                 ->required()
+                                ->unique(table: 'properties', column: 'property_code', ignorable: fn (Property $record) => $record)
                                 ->default(fn (Property $record) => $record->property_code),
                         ])
                         ->action(function (Property $record, array $data) {
@@ -1189,7 +1242,8 @@ class PropertyResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn () => auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('properties.delete') ?? false)),
                 ]),
             ]);
     }

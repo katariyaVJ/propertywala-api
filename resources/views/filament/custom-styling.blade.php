@@ -510,3 +510,53 @@
         }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Global Livewire request failure interceptor for proper admin error messaging
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('request', ({ fail }) => {
+                fail(({ status, preventDefault }) => {
+                    if (status === 419) {
+                        preventDefault();
+                        if (window.Filament && window.Filament.notifications) {
+                            window.Filament.notifications.notify({
+                                status: 'warning',
+                                title: 'Session Expired',
+                                body: 'Your admin session has timed out. Reloading page...',
+                            });
+                        }
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else if (status === 403) {
+                        preventDefault();
+                        if (window.Filament && window.Filament.notifications) {
+                            window.Filament.notifications.notify({
+                                status: 'danger',
+                                title: 'Access Restricted',
+                                body: 'You do not have permission to execute this administrative action.',
+                            });
+                        }
+                    } else if (status === 404) {
+                        preventDefault();
+                        if (window.Filament && window.Filament.notifications) {
+                            window.Filament.notifications.notify({
+                                status: 'danger',
+                                title: 'Record Not Found',
+                                body: 'The requested property, user, or record was not found or has been removed.',
+                            });
+                        }
+                    } else if (status >= 500) {
+                        preventDefault();
+                        if (window.Filament && window.Filament.notifications) {
+                            window.Filament.notifications.notify({
+                                status: 'danger',
+                                title: 'System Error',
+                                body: 'An unexpected issue occurred while processing. Please refresh and try again.',
+                            });
+                        }
+                    }
+                });
+            });
+        }
+    });
+</script>

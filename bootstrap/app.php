@@ -19,4 +19,30 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The requested record was not found or has been removed.',
+                ], 404);
+            }
+
+            return response()->view('errors.404', [
+                'exception' => $e,
+            ], 404);
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have administrative permission to access this resource.',
+                ], 403);
+            }
+
+            return response()->view('errors.403', [
+                'exception' => $e,
+            ], 403);
+        });
     })->create();

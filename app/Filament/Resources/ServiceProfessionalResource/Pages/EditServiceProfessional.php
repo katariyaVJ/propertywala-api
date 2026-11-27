@@ -16,5 +16,14 @@ class EditServiceProfessional extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
-}
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (isset($data['experience_years'])) {
+            $years = (int) $data['experience_years'];
+            $data['experience_display'] = "{$years}+ Years Experience";
+        }
+
+        return $data;
+    }
+}

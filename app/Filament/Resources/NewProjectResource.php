@@ -80,9 +80,11 @@ class NewProjectResource extends Resource
                             ->placeholder('e.g. VIP Road, Vesu')
                             ->required()
                             ->maxLength(160),
-                        Forms\Components\TextInput::make('city')
+                        Forms\Components\Select::make('city')
                             ->label('City')
+                            ->options(fn () => \App\Models\City::pluck('name', 'name')->toArray())
                             ->default('Surat')
+                            ->searchable()
                             ->required(),
                         Forms\Components\Select::make('state')
                             ->label('State')
@@ -151,6 +153,33 @@ class NewProjectResource extends Resource
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
+
+            Forms\Components\Section::make('Project Units & Floor Configurations')
+                ->description('Specify available unit types, areas, and estimated pricing')
+                ->icon('heroicon-o-home')
+                ->schema([
+                    Forms\Components\Repeater::make('units')
+                        ->relationship('units')
+                        ->schema([
+                            Forms\Components\TextInput::make('unit_type')
+                                ->label('Unit Type')
+                                ->placeholder('e.g. 3 BHK Luxury')
+                                ->required(),
+                            Forms\Components\TextInput::make('carpet_area_sqft')
+                                ->label('Carpet Area (Sq.Ft)')
+                                ->numeric()
+                                ->placeholder('1850')
+                                ->required(),
+                            Forms\Components\TextInput::make('price_estimate')
+                                ->label('Price Estimate')
+                                ->placeholder('e.g. ₹ 1.25 Cr')
+                                ->required(),
+                        ])
+                        ->columns(3)
+                        ->defaultItems(0)
+                        ->collapsible()
+                        ->itemLabel(fn (array $state): ?string => $state['unit_type'] ?? null),
+                ]),
         ]);
     }
 
@@ -181,11 +210,8 @@ class NewProjectResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('city')->options([
-                    'Surat' => 'Surat',
-                    'Ahmedabad' => 'Ahmedabad',
-                    'Vadodara' => 'Vadodara',
-                ]),
+                Tables\Filters\SelectFilter::make('city')
+                    ->options(fn () => \App\Models\City::pluck('name', 'name')->toArray()),
                 Tables\Filters\TernaryFilter::make('is_featured')->label('Featured Only'),
             ])
             ->actions([

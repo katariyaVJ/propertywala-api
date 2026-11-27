@@ -14,31 +14,47 @@ class PropertyReportResource extends Resource
 {
     protected static ?string $model = PropertyReport::class;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationIcon = 'heroicon-o-flag';
+
+    protected static ?string $navigationGroup = 'Moderation & Safety';
+
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canViewAny(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return false; // Reports come exclusively from mobile app users
     }
 
     public static function canEdit($record): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $pending = static::getModel()::where('status', 'Pending')->count();
+
+        return $pending > 0 ? (string) $pending : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
     }
 
     public static function form(Form $form): Form
@@ -117,6 +133,7 @@ class PropertyReportResource extends Resource
     {
         return [
             'index' => Pages\ListPropertyReports::route('/'),
+            'edit' => Pages\EditPropertyReport::route('/{record}/edit'),
         ];
     }
 }

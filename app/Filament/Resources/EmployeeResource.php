@@ -22,11 +22,11 @@ class EmployeeResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Employees & Staff';
+    protected static ?string $navigationLabel = 'Employee';
 
     protected static ?string $modelLabel = 'Employee';
 
-    protected static ?string $pluralModelLabel = 'Employees & Staff';
+    protected static ?string $pluralModelLabel = 'Employee';
 
     /**
      * Auto-generate the next sequential Employee Code (e.g. EMP-01, EMP-02, ...)
@@ -89,11 +89,11 @@ class EmployeeResource extends Resource
     public static function canDelete($record): bool
     {
         // Admin / Owner accounts are protected and cannot be deleted
-        if (in_array(strtolower($record->role ?? ''), ['admin', 'owner', 'superadmin'])) {
+        if (in_array(strtolower($record->role ?? ''), ['admin', 'owner', 'superadmin', 'super_admin'])) {
             return false;
         }
 
-        return auth()->user()?->isOwner() ?? false;
+        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('users.manage') ?? false);
     }
 
     /**
@@ -103,8 +103,8 @@ class EmployeeResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where(function ($query) {
-                $query->whereIn('role', ['Employee', 'employee'])
-                      ->orWhereIn('role', ['admin', 'owner', 'superadmin']);
+                $query->whereIn('role', ['Employee', 'employee', 'Staff', 'staff', 'Manager', 'manager', 'Telecaller', 'telecaller', 'Field Executive', 'field executive'])
+                      ->orWhereIn('role', ['admin', 'owner', 'superadmin', 'SuperAdmin', 'Admin']);
             });
     }
 
@@ -112,21 +112,53 @@ class EmployeeResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Employee Credentials & Profile')
-                ->description('Create or update staff profile. Credentials are used to log in at /admin.')
+                ->description('Create or update employee profile. Credentials are used to log in at /admin.')
                 ->schema([
+                    Forms\Components\TextInput::make('employee_code')
+                        ->label('Emp ID')
+                        ->default(fn () => static::generateNextEmployeeCode())
+                        ->required()
+                        ->unique(table: 'users', column: 'employee_code', ignoreRecord: true)
+                        ->helperText('Auto-generated sequential ID (e.g. EMP-01). Editable if needed.')
+                        ->maxLength(50),
+
                     Forms\Components\TextInput::make('name')
-                        ->label('Employee Full Name')
+                        ->label('Full Name')
                         ->placeholder('e.g. Rajesh Patel')
                         ->required()
                         ->maxLength(120),
 
-                    Forms\Components\TextInput::make('employee_code')
-                        ->label('Staff ID / Employee Code')
-                        ->default(fn () => static::generateNextEmployeeCode())
+                    Forms\Components\TextInput::make('email')
+                        ->label('Email Address')
+                        ->email()
+                        ->placeholder('e.g. emp1@propertywala.com')
                         ->required()
-                        ->unique(table: 'users', column: 'employee_code', ignoreRecord: true)
-                        ->helperText('Auto-generated unique ID for tracking property entries. Editable by Owner.')
-                        ->maxLength(50),
+                        ->unique(table: 'users', column: 'email', ignoreRecord: true)
+                        ->helperText('Employee will use this email to log into the admin panel.'),
+
+                    Forms\Components\TextInput::make('password')
+                        ->label('Password')
+                        ->password()
+                        ->revealable()
+                        ->minLength(6)
+                        ->maxLength(100)
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->required(fn (string $context): bool => $context === 'create')
+                        ->helperText('Required when creating an employee. Leave blank on edit to keep unchanged.'),
+
+                    Forms\Components\Select::make('role')
+                        ->label('Role')
+                        ->options([
+                            'Employee' => 'Employee',
+                            'Staff' => 'Staff',
+                            'Manager' => 'Manager',
+                            'Telecaller' => 'Telecaller',
+                            'Field Executive' => 'Field Executive',
+                        ])
+                        ->default('Employee')
+                        ->required()
+                        ->native(false)
+                        ->helperText('Designated role for this staff member.'),
 
                     Forms\Components\TextInput::make('phone')
                         ->label('Mobile Number')
@@ -135,26 +167,8 @@ class EmployeeResource extends Resource
                         ->required()
                         ->unique(table: 'users', column: 'phone', ignoreRecord: true),
 
-                    Forms\Components\TextInput::make('email')
-                        ->label('Email Address (Admin Login ID)')
-                        ->email()
-                        ->placeholder('e.g. emp1@propertywala.com')
-                        ->required()
-                        ->unique(table: 'users', column: 'email', ignoreRecord: true)
-                        ->helperText('Employee will use this email to log into the admin panel.'),
-
-                    Forms\Components\TextInput::make('password')
-                        ->label('Login Password')
-                        ->password()
-                        ->revealable()
-                        ->minLength(6)
-                        ->maxLength(100)
-                        ->dehydrated(fn ($state) => filled($state))
-                        ->required(fn (string $context): bool => $context === 'create')
-                        ->helperText('Required when creating an employee. Leave empty on edit to keep existing password.'),
-
                     Forms\Components\TextInput::make('city')
-                        ->label('Branch / Location City')
+                        ->label('Branch City')
                         ->default('Surat')
                         ->maxLength(80),
                 ])->columns(2),
@@ -169,6 +183,8 @@ class EmployeeResource extends Resource
                         ->afterStateUpdated(function (Forms\Set $set, $state) {
                             if ($state) {
                                 $set('admin_permissions', array_keys(static::getAllPermissions()));
+                            } else {
+                                $set('admin_permissions', []);
                             }
                         })
                         ->default(false),
@@ -201,7 +217,7 @@ class EmployeeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee_code')
-                    ->label('Staff ID')
+                    ->label('Emp ID')
                     ->badge()
                     ->color('info')
                     ->placeholder('ADMIN')
@@ -210,7 +226,7 @@ class EmployeeResource extends Resource
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Employee Name')
+                    ->label('Name')
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
@@ -226,8 +242,9 @@ class EmployeeResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match (strtolower($state)) {
                         'admin', 'owner', 'superadmin' => 'danger',
-                        'employee' => 'primary',
-                        default => 'gray',
+                        'manager' => 'warning',
+                        'employee', 'staff' => 'primary',
+                        default => 'info',
                     }),
 
                 Tables\Columns\TextColumn::make('access_summary')
@@ -267,14 +284,27 @@ class EmployeeResource extends Resource
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_blocked')
                     ->label('Account Status')
-                    ->placeholder('All Staff')
-                    ->trueLabel('Blocked Staff Only')
-                    ->falseLabel('Active Staff Only'),
+                    ->placeholder('All Employees')
+                    ->trueLabel('Blocked Employees Only')
+                    ->falseLabel('Active Employees Only'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
                     ->button()
                     ->size('sm'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->button()
+                    ->size('sm')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Employee')
+                    ->modalDescription(fn (User $record) => "Are you sure you want to delete employee {$record->name} [{$record->employee_code}]? This action cannot be undone.")
+                    ->visible(fn (User $record): bool => static::canDelete($record)),
 
                 Tables\Actions\Action::make('block')
                     ->label('Block')
@@ -310,16 +340,6 @@ class EmployeeResource extends Resource
                             ->send();
                     })
                     ->visible(fn (User $record) => (bool) $record->is_blocked && !$record->isOwner()),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('Delete')
-                    ->button()
-                    ->size('sm')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Permanently Delete Employee')
-                    ->modalDescription(fn (User $record) => "Are you sure you want to delete employee {$record->name} [{$record->employee_code}]? This action cannot be undone.")
-                    ->visible(fn (User $record): bool => !$record->isOwner() && (auth()->user()?->isOwner() ?? false)),
             ]);
     }
 

@@ -54,7 +54,12 @@ class EditEmployee extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->visible(fn (): bool => !in_array(strtolower($this->record->role ?? ''), ['admin', 'owner', 'superadmin']) && (auth()->user()?->isOwner() ?? false)),
+                ->label('Delete')
+                ->icon('heroicon-o-trash')
+                ->requiresConfirmation()
+                ->modalHeading('Delete Employee')
+                ->modalDescription(fn () => "Are you sure you want to delete employee {$this->record->name} [{$this->record->employee_code}]? This action cannot be undone.")
+                ->visible(fn (): bool => EmployeeResource::canDelete($this->record)),
         ];
     }
 

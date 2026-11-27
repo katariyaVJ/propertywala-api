@@ -24,7 +24,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if ($this->is_blocked) {
+        if ($this->is_blocked || $this->trashed()) {
             return false;
         }
 
@@ -35,8 +35,8 @@ class User extends Authenticatable implements FilamentUser
             return true;
         }
 
-        // Employee can access panel if designated as Employee
-        if ($role === 'employee') {
+        // Employee / Staff roles can access panel
+        if (in_array($role, ['employee', 'staff', 'manager', 'telecaller', 'field executive'], true)) {
             return true;
         }
 
@@ -50,7 +50,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function isEmployee(): bool
     {
-        return strtolower((string) $this->role) === 'employee';
+        return in_array(strtolower((string) $this->role), ['employee', 'staff', 'manager', 'telecaller', 'field executive'], true);
     }
 
     public function hasAdminPermission(string $permission): bool

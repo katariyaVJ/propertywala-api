@@ -13,7 +13,11 @@ class EditProperty extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->requiresConfirmation()
+                ->modalHeading('Delete Property Listing')
+                ->modalDescription(fn () => "Are you sure you want to delete property #{$this->record->property_code} - {$this->record->title}? This action cannot be undone.")
+                ->visible(fn (): bool => PropertyResource::canDelete($this->record)),
         ];
     }
 

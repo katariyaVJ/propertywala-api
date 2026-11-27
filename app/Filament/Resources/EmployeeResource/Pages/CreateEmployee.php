@@ -13,8 +13,8 @@ class CreateEmployee extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Enforce employee role
-        $data['role'] = 'Employee';
+        // Enforce or preserve chosen employee role
+        $data['role'] = $data['role'] ?? 'Employee';
 
         // Explicitly ensure password is standard bcrypt/argon hashed
         if (!empty($data['password'])) {

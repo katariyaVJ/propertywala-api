@@ -27,7 +27,7 @@ class StatsOverviewWidget extends BaseWidget
         // Staff productivity today (adapts: staff sees own entries, owner sees all staff entries)
         $isEmployee = auth()->user()?->isEmployee() ?? false;
         $todayStaffProperties = $isEmployee
-            ? Property::whereDate('created_at', \Carbon\Carbon::today())->where('created_by_user_id', auth()->id())->count()
+            ? Property::whereDate('created_at', \Carbon\Carbon::today())->where(fn ($q) => $q->where('created_by_user_id', auth()->id())->orWhere('user_id', auth()->id()))->count()
             : Property::whereDate('created_at', \Carbon\Carbon::today())->whereNotNull('created_by_user_id')->count();
 
         $staffCardTitle = $isEmployee ? 'My Entries Today' : 'Today Staff Entries';

@@ -20,31 +20,29 @@ class ProMembershipResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static bool $shouldRegisterNavigation = false;
-
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canViewAny(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canEdit($record): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function form(Form $form): Form
@@ -128,6 +126,7 @@ class ProMembershipResource extends Resource
     {
         return [
             'index' => Pages\ListProMemberships::route('/'),
+            'edit' => Pages\EditProMembership::route('/{record}/edit'),
         ];
     }
 }

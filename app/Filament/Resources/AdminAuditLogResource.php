@@ -13,16 +13,20 @@ class AdminAuditLogResource extends Resource
 {
     protected static ?string $model = AdminAuditLog::class;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+
+    protected static ?string $navigationGroup = 'System & Settings';
+
+    protected static ?int $navigationSort = 2;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canViewAny(): bool
     {
-        return false;
+        return auth()->user()?->isOwner();
     }
 
     public static function canCreate(): bool

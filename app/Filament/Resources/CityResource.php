@@ -43,10 +43,40 @@ class CityResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->required()->unique(ignoreRecord: true)->maxLength(80),
-            Forms\Components\TextInput::make('state')->default('Gujarat')->required()->maxLength(80),
-            Forms\Components\TextInput::make('display_order')->numeric()->default(1),
-            Forms\Components\Toggle::make('is_popular')->default(true),
+            Forms\Components\Section::make('City Details')
+                ->schema([
+                    Forms\Components\TextInput::make('name')->required()->unique(ignoreRecord: true)->maxLength(80),
+                    Forms\Components\TextInput::make('state')->default('Gujarat')->required()->maxLength(80),
+                    Forms\Components\TextInput::make('display_order')->numeric()->default(1),
+                    Forms\Components\Toggle::make('is_popular')->default(true),
+                ])->columns(2),
+
+            Forms\Components\Section::make('Famous Localities & Areas')
+                ->description('Popular neighborhoods displayed on the mobile app home screen')
+                ->schema([
+                    Forms\Components\Repeater::make('localities')
+                        ->relationship('localities')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Locality Name')
+                                ->placeholder('e.g. Vesu')
+                                ->required(),
+                            Forms\Components\TextInput::make('subtitle')
+                                ->label('Subtitle')
+                                ->placeholder('e.g. Prime Residential Hub'),
+                            Forms\Components\TextInput::make('avg_price_per_sqft')
+                                ->label('Avg Price / Sq.Ft (₹)')
+                                ->numeric()
+                                ->placeholder('5500'),
+                            Forms\Components\Toggle::make('is_famous')
+                                ->label('Famous Badge')
+                                ->default(true),
+                        ])
+                        ->columns(4)
+                        ->defaultItems(0)
+                        ->collapsible()
+                        ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
+                ]),
         ]);
     }
 

@@ -54,4 +54,23 @@ class CreateProperty extends CreateRecord
 
         return $data;
     }
+
+    protected function afterCreate(): void
+    {
+        // If property was created without photos, ensure a clean cover photo is automatically seeded
+        if ($this->record->images()->count() === 0) {
+            $isVehicle = $this->record->asset_type === 'Vehicle';
+            $defaultImg = $isVehicle
+                ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80'
+                : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+
+            $this->record->images()->create([
+                'image_url' => $defaultImg,
+                'thumbnail_url' => $defaultImg,
+                'label' => $isVehicle ? 'Vehicle Photo' : 'Front Elevation',
+                'is_cover' => true,
+                'sort_order' => 1,
+            ]);
+        }
+    }
 }
