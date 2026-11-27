@@ -14,20 +14,16 @@ class AppFeedbackReviewResource extends Resource
 {
     protected static ?string $model = AppFeedbackReview::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-star';
-
-    protected static ?string $navigationGroup = 'Moderation & Safety';
-
-    protected static ?int $navigationSort = 2;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canCreate(): bool

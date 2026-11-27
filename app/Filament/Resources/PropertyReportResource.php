@@ -14,20 +14,16 @@ class PropertyReportResource extends Resource
 {
     protected static ?string $model = PropertyReport::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-flag';
-
-    protected static ?string $navigationGroup = 'Moderation & Safety';
-
-    protected static ?int $navigationSort = 1;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canCreate(): bool

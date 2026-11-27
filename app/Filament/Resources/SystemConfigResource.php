@@ -14,20 +14,16 @@ class SystemConfigResource extends Resource
 {
     protected static ?string $model = SystemConfig::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
-
-    protected static ?string $navigationGroup = 'System & Settings';
-
-    protected static ?int $navigationSort = 1;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canCreate(): bool

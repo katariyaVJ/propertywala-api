@@ -88,12 +88,27 @@ class EmployeeResource extends Resource
 
     public static function canDelete($record): bool
     {
-        // Admin / Owner accounts are protected and cannot be deleted
-        if (in_array(strtolower($record->role ?? ''), ['admin', 'owner', 'superadmin', 'super_admin'])) {
+        if (!$record) {
             return false;
         }
 
-        return auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('users.manage') ?? false);
+        // 1. Only Owner / Admin has the permission to delete employees
+        if (!auth()->user()?->isOwner()) {
+            return false;
+        }
+
+        // 2. Cannot delete own logged-in account
+        if ($record->id === auth()->id()) {
+            return false;
+        }
+
+        // 3. Admin / Owner accounts are protected; only employees can be deleted
+        if (in_array(strtolower((string) $record->role), ['admin', 'owner', 'superadmin', 'super_admin'])) {
+            return false;
+        }
+
+        // 4. Owner can delete employees
+        return true;
     }
 
     /**
@@ -164,7 +179,7 @@ class EmployeeResource extends Resource
                         ->label('Mobile Number')
                         ->tel()
                         ->placeholder('e.g. 9876500001')
-                        ->required()
+                        ->nullable()
                         ->unique(table: 'users', column: 'phone', ignoreRecord: true),
 
                     Forms\Components\TextInput::make('city')
@@ -340,6 +355,15 @@ class EmployeeResource extends Resource
                             ->send();
                     })
                     ->visible(fn (User $record) => (bool) $record->is_blocked && !$record->isOwner()),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->filter(fn (User $record) => static::canDelete($record))->each->delete();
+                        })
+                        ->visible(fn () => auth()->user()?->isOwner()),
+                ]),
             ]);
     }
 

@@ -14,20 +14,16 @@ class ProMembershipResource extends Resource
 {
     protected static ?string $model = ProMembership::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
-
-    protected static ?string $navigationGroup = 'Subscriptions & Revenue';
-
-    protected static ?int $navigationSort = 1;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isOwner();
+        return false;
     }
 
     public static function canCreate(): bool
