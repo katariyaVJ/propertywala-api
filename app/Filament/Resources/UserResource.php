@@ -67,7 +67,9 @@ class UserResource extends Resource
                     Forms\Components\TextInput::make('email')
                         ->email()
                         ->label('Email Address')
-                        ->unique(ignoreRecord: true),
+                        ->unique(ignoreRecord: true)
+                        ->required(fn (Forms\Get $get): bool => $get('role') === 'Employee')
+                        ->helperText(fn (Forms\Get $get): ?string => $get('role') === 'Employee' ? 'Required for Employee login at /admin' : null),
                     Forms\Components\TextInput::make('password')
                         ->password()
                         ->revealable()
@@ -95,6 +97,8 @@ class UserResource extends Resource
                         ->label('Staff ID / Employee Code')
                         ->placeholder('e.g. EMP-01, EMP-02')
                         ->maxLength(50)
+                        ->required(fn (Forms\Get $get): bool => $get('role') === 'Employee')
+                        ->helperText(fn (Forms\Get $get): ?string => $get('role') === 'Employee' ? 'Unique badge ID for tracking properties entered by this staff member' : null)
                         ->visible(fn (Forms\Get $get): bool => $get('role') === 'Employee'),
                     Forms\Components\TextInput::make('city')
                         ->default('Surat'),
@@ -222,6 +226,8 @@ class UserResource extends Resource
                         })
                         ->visible(fn (User $record) => (bool) $record->is_blocked),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn (User $record): bool => !in_array(strtolower($record->role ?? ''), ['admin', 'owner', 'superadmin']) && (auth()->user()?->isOwner() ?? false)),
                 ]),
             ]);
     }
