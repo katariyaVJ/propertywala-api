@@ -6,6 +6,7 @@ use App\Filament\Resources\EmployeeResource;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Hash;
 
 class EditEmployee extends EditRecord
 {
@@ -31,8 +32,10 @@ class EditEmployee extends EditRecord
         // Clean up transient form attribute
         unset($data['all_access']);
 
-        // Only update password if a new one was provided
-        if (empty($data['password'])) {
+        // Explicitly hash password if a new one was provided, otherwise ignore it
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
             unset($data['password']);
         }
 

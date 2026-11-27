@@ -272,19 +272,25 @@ class EmployeeResource extends Resource
                     ->falseLabel('Active Staff Only'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->button()
+                    ->size('sm'),
 
                 Tables\Actions\Action::make('block')
                     ->label('Block')
                     ->icon('heroicon-o-no-symbol')
-                    ->color('danger')
+                    ->color('warning')
+                    ->button()
+                    ->size('sm')
                     ->requiresConfirmation()
+                    ->modalHeading('Suspend Employee Access')
+                    ->modalDescription(fn (User $record) => "Are you sure you want to block {$record->name}? They will be logged out and cannot access the admin panel.")
                     ->action(function (User $record) {
-                        $record->update(['is_blocked' => true, 'block_reason' => 'Suspended by Owner']);
+                        $record->update(['is_blocked' => true, 'block_reason' => 'Suspended by Admin']);
                         Notification::make()
                             ->title('Employee Blocked')
-                            ->body("{$record->name} access suspended.")
-                            ->danger()
+                            ->body("{$record->name}'s access has been suspended.")
+                            ->warning()
                             ->send();
                     })
                     ->visible(fn (User $record) => !$record->is_blocked && !$record->isOwner()),
@@ -293,17 +299,26 @@ class EmployeeResource extends Resource
                     ->label('Unblock')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->button()
+                    ->size('sm')
                     ->action(function (User $record) {
                         $record->update(['is_blocked' => false, 'block_reason' => null]);
                         Notification::make()
-                            ->title('Employee Re-activated')
-                            ->body("{$record->name} access restored.")
+                            ->title('Employee Access Restored')
+                            ->body("{$record->name} can now log into the admin panel again.")
                             ->success()
                             ->send();
                     })
                     ->visible(fn (User $record) => (bool) $record->is_blocked && !$record->isOwner()),
 
                 Tables\Actions\DeleteAction::make()
+                    ->label('Delete')
+                    ->button()
+                    ->size('sm')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Permanently Delete Employee')
+                    ->modalDescription(fn (User $record) => "Are you sure you want to delete employee {$record->name} [{$record->employee_code}]? This action cannot be undone.")
                     ->visible(fn (User $record): bool => !$record->isOwner() && (auth()->user()?->isOwner() ?? false)),
             ]);
     }

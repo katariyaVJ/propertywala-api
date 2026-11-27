@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EmployeeResource\Pages;
 use App\Filament\Resources\EmployeeResource;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Hash;
 
 class CreateEmployee extends CreateRecord
 {
@@ -14,6 +15,11 @@ class CreateEmployee extends CreateRecord
     {
         // Enforce employee role
         $data['role'] = 'Employee';
+
+        // Explicitly ensure password is standard bcrypt/argon hashed
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
 
         // If Full Access toggle was checked, grant all feature permissions
         if (!empty($data['all_access'])) {

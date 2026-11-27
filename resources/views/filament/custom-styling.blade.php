@@ -24,11 +24,115 @@
         -moz-osx-font-smoothing: grayscale;
     }
 
+    /* =========================================================================
+       TYPOGRAPHY SYSTEM - Strict Hierarchical Scales & Alignment
+       ========================================================================= */
     body {
         background-color: var(--pw-surface) !important;
         font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif !important;
         color: var(--pw-text-main) !important;
-        letter-spacing: -0.012em;
+        letter-spacing: -0.012em !important;
+        font-size: 0.90rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Primary Headings (H1 Page Titles) */
+    .fi-header-heading {
+        font-weight: 800 !important;
+        letter-spacing: -0.035em !important;
+        color: #0f172a !important;
+        font-size: 1.5rem !important;
+        line-height: 1.25 !important;
+    }
+
+    .fi-header-subheading {
+        font-size: 0.85rem !important;
+        color: #64748b !important;
+        margin-top: 0.25rem !important;
+    }
+
+    /* Section & Card Headings (H2 / Section Titles) */
+    .fi-section-header-heading {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
+        color: #1e293b !important;
+    }
+
+    .fi-section-header-description {
+        font-size: 0.80rem !important;
+        color: #64748b !important;
+    }
+
+    /* Input & Label Sizes */
+    .fi-fo-field-wrp-label span {
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+    }
+
+    .fi-fo-field-wrp-helper-text {
+        font-size: 0.75rem !important;
+        color: #64748b !important;
+        margin-top: 0.25rem !important;
+    }
+
+    /* Table Typography & Uniform Spacing */
+    .fi-ta-header-cell-label {
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        color: #64748b !important;
+    }
+
+    .fi-ta-cell {
+        font-size: 0.86rem !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+
+    /* High-Contrast Semantic Status Badges & Buttons */
+    .fi-badge {
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        padding: 3px 9px !important;
+        border-radius: 6px !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    /* Standard Button Sizing & Polish */
+    .fi-btn {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 0.84rem !important;
+        transition: all 0.15s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    .fi-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Spacing Optimization - Eliminating awkward empty gaps */
+    .fi-main {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1440px !important;
+        margin: 0 auto !important;
+    }
+
+    .fi-page-header {
+        margin-bottom: 1rem !important;
+    }
+
+    .fi-section {
+        margin-bottom: 1.25rem !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: var(--pw-shadow-sm) !important;
     }
 
     /* Elegant Custom Scrollbar */

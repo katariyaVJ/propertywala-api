@@ -230,7 +230,12 @@ class AuthController extends Controller
         }
 
         if (isset($validated['role'])) {
-            $updateData['role'] = $validated['role'];
+            // Prevent self-escalation to administrative / staff roles from public profile API
+            $targetRole = trim($validated['role']);
+            $forbiddenRoles = ['admin', 'owner', 'superadmin', 'employee', 'staff'];
+            if (!in_array(strtolower($targetRole), $forbiddenRoles, true)) {
+                $updateData['role'] = $targetRole;
+            }
         }
 
         if (isset($validated['notification_updates']) || isset($validated['notificationUpdates'])) {

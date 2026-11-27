@@ -189,10 +189,9 @@ class NewProjectResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_featured')->label('Featured Only'),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                ]),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => auth()->user()?->isOwner() || (auth()->user()?->hasAdminPermission('new_projects.manage') ?? false)),
             ]);
     }
 

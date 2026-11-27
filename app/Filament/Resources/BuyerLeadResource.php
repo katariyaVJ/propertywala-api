@@ -148,7 +148,8 @@ class BuyerLeadResource extends Resource
                                 ->send();
                         }),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn () => auth()->user()?->isOwner() ?? false),
                 ]),
             ]);
     }
